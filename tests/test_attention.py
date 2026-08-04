@@ -40,12 +40,15 @@ def test_mha_backward_finite_diff_input():
     d_out = np.ones_like(out)
     d_X = mha.backward(d_out, cache)
 
-    eps = 1e-5
+    eps = 1e-5  # docs/theory.md derives why this is the sweet spot
+    probe = X.copy()
     grad_num = np.zeros_like(X)
     for i in range(X.size):
-        flat = X.flatten()
-        flat[i] += eps; fp = loss_of(flat.reshape(X.shape))
-        flat[i] -= 2*eps; fm = loss_of(flat.reshape(X.shape))
-        flat[i] += eps
-        grad_num.flat[i] = (fp - fm) / (2*eps)
+        original = probe.flat[i]
+        probe.flat[i] = original + eps
+        fp = loss_of(probe)
+        probe.flat[i] = original - eps
+        fm = loss_of(probe)
+        probe.flat[i] = original
+        grad_num.flat[i] = (fp - fm) / (2 * eps)
     np.testing.assert_allclose(d_X, grad_num, atol=1e-3)

@@ -26,8 +26,12 @@ class MultiHeadAttention:
         self.W_v = Param(rng.uniform(-bound, bound, size=(d_model, d_model)))
         self.W_o = Param(rng.uniform(-bound, bound, size=(d_model, d_model)))
 
+    def named_params(self) -> list[tuple[str, Param]]:
+        return [("W_q", self.W_q), ("W_k", self.W_k),
+                ("W_v", self.W_v), ("W_o", self.W_o)]
+
     def params(self) -> list[Param]:
-        return [self.W_q, self.W_k, self.W_v, self.W_o]
+        return [p for _, p in self.named_params()]
 
     def _split_heads(self, x: np.ndarray) -> np.ndarray:
         """(B, T, D) -> (B, h, T, d_head)."""
@@ -60,6 +64,31 @@ class MultiHeadAttention:
         out = merged @ self.W_o.data
         cache = (X, Qh, Kh, Vh, attn)
         return out, cache
+
+    @staticmethod
+    def kv_from_cache(cache):
+        """Pull (K, V) out of a `forward` cache so decoding can continue from it."""
+        _, _, Kh, Vh, _ = cache
+        return Kh, Vh
+
+    def forward_step(self, x_new: np.ndarray, kv=None):
+        """One decoding step. `x_new` is (B, 1, D); `kv` is (K, V) for the prefix.
+
+        Returns (out (B, 1, D), (K, V) extended by this position). No causal
+        mask is applied — every key already in the cache is at a position the
+        new query is allowed to see, which is precisely why incremental
+        decoding is *exactly* equal to re-running the full forward pass.
+        """
+        q = self._split_heads(x_new @ self.W_q.data)
+        k = self._split_heads(x_new @ self.W_k.data)
+        v = self._split_heads(x_new @ self.W_v.data)
+        if kv is not None:
+            k = np.concatenate([kv[0], k], axis=2)
+            v = np.concatenate([kv[1], v], axis=2)
+        scores = q @ k.transpose(0, 1, 3, 2) / math.sqrt(self.d_head)
+        attn = softmax(scores, axis=-1)
+        out = self._merge_heads(attn @ v) @ self.W_o.data
+        return out, (k, v)
 
     def backward(self, d_out: np.ndarray, cache):
         X, Qh, Kh, Vh, attn = cache

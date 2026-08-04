@@ -40,14 +40,17 @@ def test_layernorm_backward_matches_finite_diff():
     d_out = np.ones_like(out)
     d_x, _, _ = layernorm_backward(d_out, cache)
 
-    eps = 1e-5
+    eps = 1e-5  # docs/theory.md derives why this is the sweet spot
+    probe = x.copy()
     grad_num = np.zeros_like(x)
     for i in range(x.size):
-        flat = x.flatten()
-        flat[i] += eps; xp = flat.reshape(x.shape); fp = f(xp)
-        flat[i] -= 2*eps; xm = flat.reshape(x.shape); fm = f(xm)
-        flat[i] += eps
-        grad_num.flat[i] = (fp - fm) / (2*eps)
+        original = probe.flat[i]
+        probe.flat[i] = original + eps
+        fp = f(probe)
+        probe.flat[i] = original - eps
+        fm = f(probe)
+        probe.flat[i] = original
+        grad_num.flat[i] = (fp - fm) / (2 * eps)
     np.testing.assert_allclose(d_x, grad_num, atol=1e-4)
 
 

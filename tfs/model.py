@@ -43,12 +43,22 @@ class GPT:
         self.d_model = d_model
         self.max_T = max_T
 
-    def params(self) -> list[Param]:
-        out = [self.token_emb, self.pos_emb, self.ln_f_g, self.ln_f_b]
-        for b in self.blocks:
-            out.extend(b.params())
-        out.extend(self.lm_head.params())
+    def named_params(self) -> list[tuple[str, Param]]:
+        """Every parameter tensor, with a dotted name.
+
+        `params()` is exactly the values of this list, in this order — so a
+        gradient check can iterate the model instead of hard-coding a
+        parallel list that silently rots when a Param is added.
+        """
+        out = [("token_emb", self.token_emb), ("pos_emb", self.pos_emb),
+               ("ln_f_g", self.ln_f_g), ("ln_f_b", self.ln_f_b)]
+        for i, b in enumerate(self.blocks):
+            out += [(f"blocks.{i}.{n}", p) for n, p in b.named_params()]
+        out += [(f"lm_head.{n}", p) for n, p in self.lm_head.named_params()]
         return out
+
+    def params(self) -> list[Param]:
+        return [p for _, p in self.named_params()]
 
     def forward(self, ids: np.ndarray):
         """`ids` shape (B, T). Returns (logits (B, T, V), cache)."""
@@ -105,17 +115,77 @@ class GPT:
         flat_d = d_x.reshape(-1, self.d_model)
         np.add.at(self.token_emb.grad, flat_ids, flat_d)
 
-    @np.errstate(all="ignore")
+    def forward_step(self, ids_new: np.ndarray, pos: int, kv):
+        """One cached decoding step.
+
+        `ids_new` is (B, 1) — the single new token. `pos` is its absolute
+        position (so it picks up the right row of the position table), and
+        `kv` is the per-block (K, V) cache covering positions [0, pos).
+        Returns (logits (B, V) for the new token, extended cache).
+        """
+        if ids_new.min() < 0 or ids_new.max() >= self.vocab_size:
+            raise ValueError(f"token ids must be in [0, {self.vocab_size})")
+        if pos >= self.max_T:
+            raise ValueError(f"position {pos} >= max_T {self.max_T}")
+        x = self.token_emb.data[ids_new] + self.pos_emb.data[pos][None, None, :]
+        new_kv = []
+        for blk, blk_kv in zip(self.blocks, kv, strict=True):
+            x, blk_kv = blk.forward_step(x, blk_kv)
+            new_kv.append(blk_kv)
+        h, _ = layernorm(x, self.ln_f_g.data, self.ln_f_b.data)
+        logits, _ = self.lm_head.forward(h)
+        return logits[:, -1, :], new_kv
+
+    def _sample(self, logits: np.ndarray, temperature: float,
+                rng: np.random.Generator) -> int:
+        if temperature == 0.0:
+            return int(np.argmax(logits))
+        return int(rng.choice(self.vocab_size, p=softmax(logits / temperature)))
+
     def generate(self, prompt: np.ndarray, max_new: int,
                  temperature: float = 1.0,
-                 rng: np.random.Generator | None = None) -> np.ndarray:
-        """Autoregressive sampling. `prompt` shape (T,)."""
+                 rng: np.random.Generator | None = None,
+                 use_cache: bool = True) -> np.ndarray:
+        """Autoregressive decoding. `prompt` has shape (T,).
+
+        temperature > 0 samples from softmax(logits / temperature);
+        temperature == 0 is exact greedy argmax decoding. Negative
+        temperatures are rejected rather than silently clamped.
+
+        With `use_cache=True` each step feeds only the new token and reuses
+        the cached keys and values, which is bit-for-bit the same arithmetic
+        as re-running the whole prefix (`tests/test_kv_cache.py` pins the
+        equivalence). The cache is rebuilt whenever the context window has
+        to slide past `max_T`: the learned *absolute* position table means
+        every surviving token changes its position id, so its keys and
+        values are no longer valid. That is a real cost of absolute
+        positions, and one of the reasons relative schemes exist.
+        """
+        if temperature < 0:
+            raise ValueError(f"temperature must be >= 0; got {temperature}")
         rng = rng or np.random.default_rng(0)
         ids = list(map(int, prompt))
+        if not use_cache:
+            for _ in range(max_new):
+                ctx = np.array(ids[-self.max_T:])[None, :]
+                logits, _ = self.forward(ctx)
+                ids.append(self._sample(logits[0, -1], temperature, rng))
+            return np.array(ids)
+
+        kv = None
+        n_cached = 0
         for _ in range(max_new):
-            ctx = np.array(ids[-self.max_T:])[None, :]
-            logits, _ = self.forward(ctx)
-            last = logits[0, -1] / max(1e-6, temperature)
-            probs = softmax(last)
-            ids.append(int(rng.choice(self.vocab_size, p=probs)))
+            ctx = ids[-self.max_T:]
+            if kv is None or n_cached != len(ctx) - 1:
+                # Prefill, or re-fill after the window slid: run the full
+                # forward over the window and keep the keys/values it built.
+                logits, cache = self.forward(np.array(ctx)[None, :])
+                kv = [TransformerBlock.kv_from_cache(c) for c in cache[1]]
+                n_cached = len(ctx)
+                last = logits[0, -1]
+            else:
+                last, kv = self.forward_step(np.array([[ctx[-1]]]), n_cached, kv)
+                n_cached += 1
+                last = last[0]
+            ids.append(self._sample(last, temperature, rng))
         return np.array(ids)

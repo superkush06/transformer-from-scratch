@@ -25,8 +25,11 @@ class Linear:
         self.W = Param(rng.uniform(-bound, bound, size=(in_dim, out_dim)))
         self.b = Param(np.zeros(out_dim)) if bias else None
 
+    def named_params(self) -> list[tuple[str, Param]]:
+        return [("W", self.W)] + ([("b", self.b)] if self.b is not None else [])
+
     def params(self) -> list[Param]:
-        return [self.W] + ([self.b] if self.b is not None else [])
+        return [p for _, p in self.named_params()]
 
     def forward(self, x: np.ndarray):
         y = x @ self.W.data
@@ -52,8 +55,12 @@ class FFN:
         self.up = Linear(d_model, d_ff, bias=True, rng=rng)
         self.down = Linear(d_ff, d_model, bias=True, rng=rng)
 
+    def named_params(self) -> list[tuple[str, Param]]:
+        return ([(f"up.{n}", p) for n, p in self.up.named_params()]
+                + [(f"down.{n}", p) for n, p in self.down.named_params()])
+
     def params(self) -> list[Param]:
-        return self.up.params() + self.down.params()
+        return [p for _, p in self.named_params()]
 
     def forward(self, x: np.ndarray):
         u, u_cache = self.up.forward(x)
@@ -81,9 +88,14 @@ class TransformerBlock:
         self.ln2_g = Param(np.ones(d_model))
         self.ln2_b = Param(np.zeros(d_model))
 
+    def named_params(self) -> list[tuple[str, Param]]:
+        return ([(f"attn.{n}", p) for n, p in self.attn.named_params()]
+                + [(f"ffn.{n}", p) for n, p in self.ffn.named_params()]
+                + [("ln1_g", self.ln1_g), ("ln1_b", self.ln1_b),
+                   ("ln2_g", self.ln2_g), ("ln2_b", self.ln2_b)])
+
     def params(self) -> list[Param]:
-        return (self.attn.params() + self.ffn.params()
-                + [self.ln1_g, self.ln1_b, self.ln2_g, self.ln2_b])
+        return [p for _, p in self.named_params()]
 
     def forward(self, x: np.ndarray):
         h1, c1 = layernorm(x, self.ln1_g.data, self.ln1_b.data)
@@ -93,6 +105,24 @@ class TransformerBlock:
         f, ffn_cache = self.ffn.forward(h2)
         x2 = x1 + f
         return x2, (c1, attn_cache, c2, ffn_cache)
+
+    @staticmethod
+    def kv_from_cache(cache):
+        """Extract this block's (K, V) from a `forward` cache."""
+        return MultiHeadAttention.kv_from_cache(cache[1])
+
+    def forward_step(self, x_new: np.ndarray, kv=None):
+        """One decoding step through the block. `x_new` is (B, 1, D).
+
+        Same arithmetic as `forward`, minus the caching the backward pass
+        needs — this path is inference only.
+        """
+        h1, _ = layernorm(x_new, self.ln1_g.data, self.ln1_b.data)
+        a, kv = self.attn.forward_step(h1, kv)
+        x1 = x_new + a
+        h2, _ = layernorm(x1, self.ln2_g.data, self.ln2_b.data)
+        f, _ = self.ffn.forward(h2)
+        return x1 + f, kv
 
     def backward(self, d_out, cache):
         c1, attn_cache, c2, ffn_cache = cache

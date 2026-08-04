@@ -13,31 +13,34 @@ def test_gpt_forward_shape():
     assert logits.shape == (1, 5, 20)
 
 
-def test_gpt_loss_decreases_on_repeat_task():
-    """Single training run on a tiny copy task; loss should drop substantially."""
+def test_gpt_loss_decreases_on_learnable_task():
+    """Train on a deterministic next-token task; loss must actually fall.
+
+    An earlier version of this test trained on *random* targets and then
+    asserted only that the loss values were not None — it could not fail.
+    This one trains on windows of a fixed cyclic sequence and requires a
+    large real drop from the ~log(vocab) starting point.
+    """
     from tfs.train import AdamLite
     vocab = 8
     rng = np.random.default_rng(0)
+    base = np.tile(np.arange(vocab), 4)  # 0,1,...,7 repeating, length 32
     model = GPT(vocab_size=vocab, d_model=16, n_heads=2, d_ff=32,
                 n_blocks=2, max_T=8, seed=0)
     opt = AdamLite(model.params(), lr=5e-3)
 
-    initial = None
-    final = None
-    for step in range(120):
-        seq = rng.integers(0, vocab, size=(4, 8))
-        ids = seq[:, :-1]
-        tgt = seq[:, 1:]
-        for p in model.params():
-            p.zero_grad()
-        loss = model.loss_and_grads(ids, tgt)
+    losses = []
+    for _ in range(150):
+        starts = rng.integers(0, len(base) - 9, size=4)
+        ids = np.stack([base[s:s + 8] for s in starts])
+        tgt = np.stack([base[s + 1:s + 9] for s in starts])
+        opt.zero_grad()
+        losses.append(model.loss_and_grads(ids, tgt))
         opt.step()
-        if step == 0:
-            initial = loss
-        final = loss
-    # Random-targets baseline loss = log(vocab). Trained loss might not drop
-    # much on truly random data, so we instead train on a tiny copy task.
-    assert initial is not None and final is not None
+
+    assert losses[0] > 1.5  # ~log(8) = 2.08 at init
+    assert losses[-1] < 0.2  # the task is deterministic: must be learned
+    assert losses[-1] < 0.1 * losses[0]
 
 
 def test_gpt_learns_repeated_pattern():
@@ -45,7 +48,6 @@ def test_gpt_learns_repeated_pattern():
     the model should drive loss well below random uniform."""
     from tfs.train import AdamLite
     vocab = 4
-    np.random.default_rng(0)
     # Period-2 sequence: 0,1,0,1,...
     base = np.tile([0, 1], 16)  # length 32
     model = GPT(vocab_size=vocab, d_model=16, n_heads=2, d_ff=32,
