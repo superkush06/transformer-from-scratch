@@ -50,10 +50,15 @@ def softmax_crossentropy(logits: np.ndarray, targets: np.ndarray):
     flat_logits = logits.reshape(-1, logits.shape[-1])
     flat_targets = targets.reshape(-1)
     N, V = flat_logits.shape
-    probs = softmax(flat_logits, axis=-1)
-    log_probs = np.log(probs[np.arange(N), flat_targets] + 1e-300)
+    # Exact form: log softmax(x)_t = x_t - logsumexp(x). The alternative,
+    # log(softmax(x) + eps), silently saturates at -log(eps) once the
+    # target probability underflows — i.e. exactly when the model is
+    # confidently wrong and the loss value matters most.
+    m = flat_logits.max(axis=-1, keepdims=True)
+    lse = np.log(np.exp(flat_logits - m).sum(axis=-1)) + m[:, 0]
+    log_probs = flat_logits[np.arange(N), flat_targets] - lse
     loss = -log_probs.mean()
-    d_logits = probs.copy()
+    d_logits = softmax(flat_logits, axis=-1)
     d_logits[np.arange(N), flat_targets] -= 1.0
     d_logits /= N
     return float(loss), d_logits.reshape(logits.shape)

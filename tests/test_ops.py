@@ -67,3 +67,26 @@ def test_gelu_backward_matches_finite_diff():
     fd = (gelu(x + eps) - gelu(x - eps)) / (2 * eps)
     ad = gelu_backward(x, np.ones_like(x))
     np.testing.assert_allclose(ad, fd, atol=1e-4)
+
+
+def test_softmax_crossentropy_exact_when_confidently_wrong():
+    """Loss must be exact even when the target prob underflows.
+
+    log(softmax(x) + 1e-300) saturates at ~690.8 as soon as the target
+    probability underflows to 0; the logsumexp form gives the true value.
+    """
+    logits = np.array([[1000.0, 0.0]])
+    targets = np.array([1])
+    loss, _ = softmax_crossentropy(logits, targets)
+    # exact loss = logsumexp([1000, 0]) - 0 = 1000 + log(1 + e^-1000) = 1000
+    assert abs(loss - 1000.0) < 1e-9
+
+
+def test_softmax_crossentropy_matches_reference_value():
+    rng = np.random.default_rng(0)
+    logits = rng.standard_normal((3, 5))
+    targets = np.array([1, 0, 4])
+    loss, _ = softmax_crossentropy(logits, targets)
+    p = softmax(logits, axis=-1)
+    ref = -np.log(p[np.arange(3), targets]).mean()
+    assert abs(loss - ref) < 1e-12
