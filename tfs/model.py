@@ -55,6 +55,12 @@ class GPT:
         B, T = ids.shape
         if T > self.max_T:
             raise ValueError(f"sequence length {T} > max_T {self.max_T}")
+        # Fancy indexing would raise a bare IndexError for ids >= V and,
+        # worse, silently wrap negative ids to the wrong embedding rows.
+        if ids.size and (ids.min() < 0 or ids.max() >= self.vocab_size):
+            bad = ids[(ids < 0) | (ids >= self.vocab_size)]
+            raise ValueError(
+                f"token ids must be in [0, {self.vocab_size}); got {bad[:5].tolist()}")
         x = self.token_emb.data[ids] + self.pos_emb.data[:T][None, :, :]
         block_caches = []
         for blk in self.blocks:
