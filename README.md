@@ -3,34 +3,33 @@
 [![ci](https://github.com/superkush06/transformer-from-scratch/actions/workflows/ci.yml/badge.svg)](https://github.com/superkush06/transformer-from-scratch/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A GPT written the long way. Every backward pass in this repository was
-derived on paper and typed out as NumPy — there is no autograd, no tape,
-no `.backward()`. When you read `tfs/attention.py`, you are reading the
-chain rule.
+A decoder-only GPT in NumPy with no autograd. Every backward pass —
+attention, LayerNorm, GELU, cross-entropy — was derived by hand and
+written out as explicit NumPy. There is no tape and no `.backward()`.
 
-Doing that is only worth anything if the derivatives are actually right,
-so the centrepiece here is not the model. It is the evidence: 1,312
-hand-computed partial derivatives, every one of them checked against the
-definition of a derivative. `examples/gradcheck.py` sweeps all 1,312;
-CI checks all 29 parameter tensors on every push, sampling coordinates
-inside the large ones so the build stays under a second.
+Hand-derived gradients are easy to get subtly wrong, so most of the work
+here is the evidence that these ones are right: 1,312 hand-computed
+partial derivatives, each checked against a central difference.
+`examples/gradcheck.py` sweeps all 1,312 in about half a second. CI
+checks all 29 parameter tensors on every push, sampling coordinates
+inside the large ones so that test stays under a second.
 
 ![hand-derived gradients against central differences](docs/gradcheck.png)
 
 **(a)** every scalar gradient in a 2-block model, plotted against the
-central difference that measures it — 1,312 points across five decades,
+central difference that measures it — 1,312 points spanning five decades,
 all on the diagonal, all with the right sign. **(b)** the worst relative
-error inside each of the 29 parameter tensors; the loosest is
+error inside each of the 29 parameter tensors. The loosest is
 `blocks.0.ffn.down.W` at 3.1e-07, a factor of 330 inside the 1e-4
-relative tolerance CI enforces. **(c)** why the check uses `eps = 1e-5`:
-truncation error falls like ε² while floating-point cancellation grows
-like η/ε, so their sum is a V whose minimum sits at ε ≈ η^(1/3) and whose
+relative tolerance CI enforces. **(c)** why the check uses `eps = 1e-5`.
+Truncation error falls like ε² and floating-point cancellation grows like
+η/ε, so their sum is a V whose minimum sits at ε ≈ η^(1/3) and whose
 depth is ≈ η^(2/3). The *shape* is what the algebra in
-[`docs/theory.md`](docs/theory.md) predicts; the *position* is close but
-not equal. The sweep bottoms out at ε = 3e-05, 3.6x to the right of the
+[`docs/theory.md`](docs/theory.md) predicts. The *position* is close but
+not equal: the sweep bottoms out at ε = 3e-05, 3.6x to the right of the
 ε* ≈ 9e-6 the idealisation gives, at a median relative error of 4e-10,
-11x above its η^(2/3) ≈ 4e-11 floor — the gap is the |f| and |f‴|
-factors the idealisation sets to 1.
+11x above its η^(2/3) ≈ 4e-11 floor. The gap is the |f| and |f‴| factors
+the idealisation sets to 1.
 
 ## Install
 
@@ -38,16 +37,21 @@ factors the idealisation sets to 1.
 git clone https://github.com/superkush06/transformer-from-scratch.git
 cd transformer-from-scratch
 pip install -e ".[dev]"
-pytest
+pytest                                        # 80 tests, ~10 s
 ```
 
-NumPy is the only runtime dependency; matplotlib is dev-only, for figures.
+NumPy is the only runtime dependency. The `dev` extra adds pytest, ruff
+and matplotlib; matplotlib is needed only to redraw the figures.
+
+The scripts under `examples/` and `docs/` are not part of the installed
+package, so run them from the repository root with `PYTHONPATH=.`, as
+shown below.
 
 ## The API in one page
 
-Forward passes return `(output, cache)`, and backward passes consume that
-cache. It is more typing than a tape, and that is the point — the
-computation graph is a thing you can see.
+Forward passes return `(output, cache)`, and backward passes take that
+cache back. That is more typing than a tape, and it is the point: the
+computation graph is explicit rather than hidden.
 
 ```python
 >>> import numpy as np
@@ -74,7 +78,8 @@ computation graph is a thing you can see.
 (24, 24)
 ```
 
-Four hundred steps later, greedy decoding on the period-5 toy task:
+After 400 training steps, greedy decoding on the period-5 toy task
+(start the interpreter in the repository root so `examples` imports):
 
 ```python
 >>> from examples.train_pattern import train
@@ -84,13 +89,14 @@ array([1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
 ```
 
 `temperature=0` is exact greedy decoding. Negative temperatures and
-out-of-vocabulary ids raise `ValueError` rather than quietly returning
-something plausible.
+out-of-vocabulary ids raise `ValueError` instead of returning something
+plausible.
 
 ## Every gradient, checked against the definition
 
 `PYTHONPATH=. python3 examples/gradcheck.py` perturbs every scalar of
-every tensor and compares the measured slope with the hand-derived one:
+every tensor and compares the measured slope with the hand-derived one.
+It takes about half a second:
 
 ```
 2-block GPT: 29 parameter tensors, 1,312 scalars, central differences at eps=1e-5
@@ -134,23 +140,25 @@ PASS (tolerance 1e-04)
 ```
 
 The embedding tables show larger *absolute* errors than everything else
-because their gradients are larger; relative to their own magnitude they
+because their gradients are larger. Relative to their own magnitude they
 are as accurate as the rest. `tests/test_gradcheck.py` runs the same
 check over sampled coordinates on every push, parametrised over
-`GPT.named_params()` — so a parameter added to the model is grad-checked
-the day it is added, not the day someone remembers to add it to a list.
+`GPT.named_params()`, so a parameter added to the model is grad-checked
+the day it is added and nobody has to update a list.
 
 ## Checked against things that are not this repo
 
-A test suite proves a library agrees with itself. The gradient check
-above is better than that — a central difference knows nothing about the
-backward pass it is grading — and
-[`docs/validation.md`](docs/validation.md) extends the idea to ten more
-claims. One command produces every number in it:
+A test suite only shows that a library agrees with itself. A central
+difference does not: it knows nothing about the backward pass it is
+grading. [`docs/validation.md`](docs/validation.md) applies that idea to
+ten more claims, each checked against a closed form or a published paper.
+One command produces every number in it:
 
 ```bash
 PYTHONPATH=. python3 examples/validate.py        # ~20 s
 ```
+
+Seven of the eleven rows:
 
 | claim | ours | reference | source |
 | ----- | ---- | --------- | ------ |
@@ -162,33 +170,34 @@ PYTHONPATH=. python3 examples/validate.py        # ~20 s
 | LayerNorm output variance | `0.9999972221` | 1.0 — **does not match** | Ba, Kiros & Hinton (2016) |
 | held-out cross-entropy on a second-order Markov source | `0.9085` nats | `0.9068` (the source itself) | Cover & Thomas, §4.2 |
 
-Two of the eleven rows disagree, and both stay in the table. The GELU
-here is the tanh approximation, so it is 4.7e-04 away from `x·Φ(x)` by
-construction — and its *derivative* is exact for the function actually
-implemented, which is what the gradient check confirms. LayerNorm cannot
-emit unit variance because it divides by `sqrt(var + eps)`; the measured
-value matches `var/(var+eps)` to 2e-16. Neither is a bug, and rounding
-either one away would have made the page less useful, not more.
+Two of the eleven rows disagree with their reference, and both stay in.
+The GELU here is the tanh approximation, so it is 4.7e-04 away from
+`x·Φ(x)` by construction, and its *derivative* is exact for the function
+actually implemented — which is what the gradient check confirms.
+LayerNorm cannot emit unit variance because it divides by
+`sqrt(var + eps)`; the measured value matches `var/(var+eps)` to 2e-16.
+Neither is a bug, so neither is rounded away.
 
-The last row is the one that took the most work to be able to write. The
-source is a second-order Markov chain, so its entropy rate is available
-in closed form and no predictor can score below it; the model lands
-0.0017 nats above the oracle on the same tokens, and beats a bigram
-baseline by 0.0287 nats. Of that margin, 0.0260 nats is the closed-form
-edge I(X; X₋₂ | X₋₁) that any predictor looking two labels back can
-claim; the remaining 0.0027 is finite-sample slack on one 4,000-label
-draw, not a second source of skill. Full write-up, including why the
-model appears to beat the population entropy rate and does not:
+The last row took the most work. The source is a second-order Markov
+chain, so its entropy rate is available in closed form and no predictor
+can score below it. The model lands 0.0017 nats above the oracle on the
+same tokens and beats a bigram baseline by 0.0287 nats. Of that margin,
+0.0260 nats is the closed-form edge I(X; X₋₂ | X₋₁) that any predictor
+looking two labels back can claim; the remaining 0.0027 is finite-sample
+slack on one 4,000-label draw, not a second source of skill. The full
+write-up, including why the model appears to beat the population entropy
+rate and does not, is in
 [`docs/validation.md`](docs/validation.md).
 
 Alongside it, `tests/test_properties.py` asserts the laws rather than the
-values — softmax lands on the simplex and is invariant to a constant
+values: softmax lands on the simplex and is invariant to a constant
 shift, LayerNorm's `d_x` is orthogonal to both directions the layer
 discards, a batch gradient is the mean of its rows, an attention output
 lies inside the convex hull of the values it may see, Adam's first step
-is `-lr·sign(g)` whatever the gradient's magnitude. Each is drawn a few
-hundred times from a seeded generator, so passing means the identity
-held, not that a fixture did.
+is `-lr·sign(g)` whatever the gradient's magnitude. Each property is
+drawn dozens to a couple of hundred times from a seeded generator, so a
+pass means the identity held across the draws, not that one fixture
+matched.
 
 ## Decoding without recomputing the past
 
@@ -200,15 +209,15 @@ tensors *are* the numbers a full forward pass would recompute. The
 derivation is in [`docs/theory.md`](docs/theory.md).
 `tests/test_kv_cache.py` requires the cached and recomputed logits to
 agree to better than 1e-12 at every step, for greedy and for sampled
-decoding alike; the worst disagreement it actually sees is 1.1e-15, or
-five units in the last place of a float64.
+decoding alike. The worst disagreement it actually sees is 1.1e-15 —
+about ten float64 ulps at the logit value where it occurs.
 
 ![decode work with and without the key/value cache](docs/kv_cache.png)
 
 What the cache removes is counted rather than timed. `docs/figures.py`
 instruments `GPT` and records how many token-positions each decoding
-strategy pushes through the block stack — an integer, identical on every
-machine, and checked against the closed form
+strategy pushes through the block stack. That is an integer, identical on
+every machine, and it is checked against the closed form
 `sum_i min(prompt + i, max_T)` before the figure is drawn:
 
 | tokens | full recompute | key/value cache | positions saved |
@@ -221,34 +230,28 @@ machine, and checked against the closed form
 
 (8-token prompt, `max_T = 512`, so nothing here slides the window.)
 
-Wall-clock does not follow that ratio, and it would be dishonest to
-imply it does — or to quote it as a tight band. On one core of an Apple
-M2 (macOS 15.0.1, CPython 3.12.6, NumPy 2.3.5, laptop otherwise idle) a
-4-block `d_model=128` model decoding 256 tokens took 5.0–9.4 s uncached
-and 0.19–0.46 s cached over nine single attempts, a speed-up of 15x to
-37x. `docs/figures.py` reports the better of two attempts per
-configuration, which trims the slow tail and so reads higher: eight
-consecutive runs of it printed 20.3x, 25.5x, 28.5x, 28.8x, 28.8x,
-32.2x, 36.5x and 42.8x — median 29x, on full times of 3.7–6.8 s
-against cached times of 0.13–0.20 s. Taken together that is **15x to
-43x**, not 132x, and the high end belongs to the better-of-two number
-the script prints — so running the command below can legitimately show
-more than the nine-attempt range does.
+Wall-clock does not follow that ratio, and it is not a tight band either.
+On one core of an Apple M2 (macOS 15.0.1, CPython 3.12.6, NumPy 2.5.1,
+laptop otherwise idle) a 4-block `d_model=128` model decoding 256 tokens
+took 4.0–4.5 s uncached and 0.14–0.21 s cached over nine single attempts:
+21x to 32x, median 25x. `docs/figures.py` reports the better of two
+attempts per configuration; eight consecutive runs of it printed 22x to
+29x, median 27x. On a laptop that was not idle the same script printed
+17x, on 7.5 s uncached against 0.44 s cached. Call it 17x to 32x, not
+132x. Your machine and its current load will move it.
 
-Two reasons the ratio is both smaller and noisier than the position
-count: a cached step still attends over the whole prefix, so its cost
-is not constant, and at these sizes much of what is left is Python and
-NumPy call overhead that the cache does not touch — overhead that
-shares the machine with everything else running on it.
-`PYTHONPATH=. python3 docs/figures.py` prints your own numbers rather
-than asking you to trust these.
+Two reasons the ratio is smaller and noisier than the position count: a
+cached step still attends over the whole prefix, so its cost is not
+constant, and at these sizes much of what is left is Python and NumPy
+call overhead that the cache does not touch. Run
+`PYTHONPATH=. python3 docs/figures.py` to get your own numbers.
 
-The cache has one honest failure mode, and it is instructive. Position
+The cache has one failure mode, and it is instructive. Position
 embeddings here are *learned and absolute*, so the moment the context
 window slides past `max_T`, every surviving token is assigned a new
 position id and the whole cache becomes invalid. `generate` detects that
-and rebuilds. The cost belongs to absolute positions rather than to
-caching, and it is one of the quieter arguments for relative schemes.
+and rebuilds. The cost belongs to absolute positions, not to caching, and
+it is one of the arguments for relative schemes.
 
 ## What the loss will not tell you
 
@@ -273,7 +276,7 @@ greedy next-token accuracy at each position makes the failure legible:
 Position 9 is the first prediction whose context window the fixed-offset
 model never saw in training, and that is exactly where it falls off the
 cliff. The oscillation afterwards is phase error drifting in and out of
-alignment — not partial knowledge. Sampling training windows at random
+alignment, not partial knowledge. Sampling training windows at random
 offsets removes the shortcut, and `tests/test_generalization.py` keeps it
 removed: greedy generation must reproduce the pattern exactly for 20
 tokens past the training window.
@@ -285,9 +288,8 @@ Full write-up: [`docs/positional-generalization.md`](docs/positional-generalizat
 This is the deep-learning-internals layer of a group of small NumPy
 libraries. It shares its premise with **tinydiff**, which builds a
 reverse-mode autodiff engine and then lets the tape write the backward
-pass; here the tape is removed and the same derivatives are written out
-by hand, which is a worse way to build a model and a better way to
-understand one.
+pass. Here there is no tape and the same derivatives are written out by
+hand: a worse way to build a model and a better way to understand one.
 
 It is also rarely the whole pipeline. Upstream, something turns a
 continuous series into discrete labels — a Gaussian HMM decoded with
@@ -295,12 +297,16 @@ Viterbi, of the kind **regimes** implements. Downstream, something wants
 a distribution over the next label rather than a point forecast: a sizing
 rule (**kelly-bet**) or a tail-risk model (**risk**).
 
-`examples/regime_handoff.py` is that middle stage, worked end to end and
-self-contained — it imports nothing but `tfs`, and inlines the upstream
-source as a second-order Markov chain over four labels (calm/stressed
-crossed with up/down). Inlining it is what makes the example checkable:
-the chain's conditional distribution and entropy rate are closed forms,
-so the example can grade itself instead of just running.
+`examples/regime_handoff.py` is that middle stage, worked end to end. It
+imports nothing but `tfs`, and inlines the upstream source as a
+second-order Markov chain over four labels (calm/stressed crossed with
+up/down). Inlining it is what makes the example checkable: the chain's
+conditional distribution and entropy rate are closed forms, so the
+example grades itself instead of just running.
+
+```bash
+PYTHONPATH=. python3 examples/regime_handoff.py   # ~14 s
+```
 
 ```
 held-out cross-entropy, nats/label (lower is better)
@@ -336,11 +342,12 @@ be. The training loss does not.
 | `examples/regime_handoff.py` | the worked hand-off: labels in, a scored distribution out |
 | `tests/test_properties.py` | randomised invariants — the laws, not the values |
 
-Everything regenerates from a cold start. The figures are deterministic —
-fixed seeds, counted operations rather than wall-clock — so re-running
-this on the same matplotlib writes byte-identical PNGs, and a figure that
-has drifted from the script that draws it shows up as a dirty working
-tree:
+Everything regenerates from a cold start. The figures use fixed seeds and
+counted operations rather than wall-clock, so re-running on the same
+matplotlib version writes byte-identical PNGs, and a figure that has
+drifted from the script that draws it shows up as a dirty working tree.
+A different matplotlib version redraws them slightly differently, so
+expect a diff after upgrading it.
 
 ```bash
 PYTHONPATH=. python3 docs/figures.py          # all three figures, ~15 s
@@ -351,7 +358,7 @@ PYTHONPATH=. python3 examples/validate.py     # the validation table, ~20 s
 
 - **Not fast.** float64 NumPy, no GPU, no fused kernels. Everything is
   small on purpose: the toy tasks train in seconds, and the biggest model
-  in the repo is the 0.9M-parameter one the decode benchmark uses. The
+  in the repo is the 922,368-parameter one the decode benchmark uses. The
   backward pass allocates freely — legibility beat speed every time the
   two disagreed.
 - **Not a training stack.** No dropout, no weight decay, no
