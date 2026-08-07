@@ -97,8 +97,8 @@
             font-weight: 500; color: var(--ink) }
   .tile b.ok { color: var(--ok) } .tile b.no { color: var(--bad) }
 
-  .knobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
-           gap: 1.5rem 2.4rem; margin-top: 1.9rem }
+  .knobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+           gap: 1.5rem 2.2rem; margin-top: 1.9rem }
   .knob .lab { display: flex; justify-content: space-between; align-items: baseline;
                margin-bottom: .75rem }
   .knob .lab b, .knob .lab i {
@@ -121,6 +121,18 @@
          gap: 1rem; flex-wrap: wrap;
          margin: 2.4rem auto 0; border-top: 1px solid var(--hair); padding-top: .7rem }
   button.m { background: none; border: 0; padding: 0; cursor: pointer }
+  /* The page has one thing it wants you to press. Borderless mono at .69rem
+     reads as a caption, so the primary actions get a real target. */
+  button.go { font-family: "IBM Plex Mono", Menlo, monospace; font-size: .74rem;
+              font-weight: 500; letter-spacing: .085em; text-transform: uppercase;
+              background: var(--ink); color: var(--paper); border: 1px solid var(--ink);
+              border-radius: 3px; padding: .58rem 1.15rem; cursor: pointer;
+              transition: opacity .12s ease }
+  button.go:hover { opacity: .82 }
+  button.go:disabled { opacity: .35; cursor: default }
+  button.quiet { background: none; color: var(--quiet); border-color: var(--hair) }
+  button.quiet:hover { color: var(--ink); border-color: var(--quiet); opacity: 1 }
+  .bar { padding-top: .95rem }
   button.m:hover { color: var(--ink) }
   button.m:disabled { opacity: .4; cursor: default }
 
@@ -220,7 +232,7 @@
   <span class="m">Runs in this tab &nbsp;::&nbsp; nothing precomputed &nbsp;::&nbsp; your text, not mine</span>
   <h1>A GPT you can train on your own text</h1>
   <p class="dek">Paste anything below and a 41,000-parameter transformer learns it here, in
-    your browser, in about six seconds. Then read what its attention heads are doing and ask
+    your browser, in well under a minute. Then read what its attention heads are doing and ask
     it to write. I wrote every backward pass in it by hand, so the last section checks them.</p>
   <div class="banner">
     <span><b>Written in</b> NumPy</span>
@@ -271,16 +283,16 @@
       <div class="seg" id="sSeg"></div>
     </div>
   </div>
-  <figure><canvas id="loss"></canvas></figure>
-  <div class="out" id="live"><span class="seed">press train</span></div>
-  <div class="tiles" id="tTiles"></div>
   <div class="bar">
     <span>
-      <button class="m" id="run">&#9654; train</button>
-      &nbsp;&nbsp;<button class="m" id="reset">&#8635; start over</button>
+      <button class="go" id="run">&#9654;&nbsp; Train the model</button>
+      &nbsp;&nbsp;<button class="go quiet" id="reset">&#8635;&nbsp; Start over</button>
     </span>
     <span class="m" id="tState">not trained</span>
   </div>
+  <figure><canvas id="loss"></canvas></figure>
+  <div class="out" id="live"><span class="seed">the sample it writes will appear here</span></div>
+  <div class="tiles" id="tTiles"></div>
 </div>
 
 <div class="text"><div class="finding"><span class="m">Finding &middot; one</span>
@@ -314,11 +326,11 @@
       <div class="seg" id="nSeg"></div>
     </div>
   </div>
-  <div class="out" id="gen"><span class="seed">train it first</span></div>
   <div class="bar">
-    <span><button class="m" id="go">&#9654; write</button></span>
+    <span><button class="go" id="go">&#9654;&nbsp; Write</button></span>
     <span class="m" id="gState">waiting on a trained model</span>
   </div>
+  <div class="out" id="gen"><span class="seed">train it first</span></div>
 </div>
 
 <div class="text"><div class="finding"><span class="m">Finding &middot; two</span>
@@ -340,11 +352,11 @@
            aria-label="text to read attention over" />
   </div>
   <div class="why" id="aWhy">any string from your alphabet</div>
-  <div class="heads" id="heads"></div>
   <div class="bar">
-    <span><button class="m" id="aRun">&#9654; read the heads</button></span>
+    <span><button class="go" id="aRun">&#9654;&nbsp; Read the heads</button></span>
     <span class="m" id="aState">train it first</span>
   </div>
+  <div class="heads" id="heads"></div>
 </div>
 
 <div class="text"><div class="finding"><span class="m">Finding &middot; three</span>
@@ -368,15 +380,15 @@
 </div>
 
 <div class="wide">
-  <figure><canvas id="scatter"></canvas></figure>
-  <div class="tiles" id="gTiles"></div>
   <div class="bar">
     <span>
-      <button class="m" id="gRun">&#9654; check the gradients</button>
-      &nbsp;&nbsp;<button class="m" id="bRun">&#9654; now break one on purpose</button>
+      <button class="go" id="gRun">&#9654;&nbsp; Check the gradients</button>
+      &nbsp;&nbsp;<button class="go quiet" id="bRun">&#9654;&nbsp; Break one on purpose</button>
     </span>
     <span class="m" id="gState2">not run</span>
   </div>
+  <figure><canvas id="scatter"></canvas></figure>
+  <div class="tiles" id="gTiles"></div>
 </div>
 
 <div class="text"><div class="finding"><span class="m">Finding &middot; four</span>
@@ -450,14 +462,14 @@ function seg(host, items, cur, pick) {
 
 /* ---- 01 teach it ---- */
 function drawLoss() {
-  const { c, w, h } = ctx2($("#loss"), 250);
+  const { c, w, h } = ctx2($("#loss"), LOSSES.length ? 250 : 120);
   const pad = { l: 54, r: 20, t: 24, b: 38 };
   c.fillStyle = QUIET; c.font = MONO(9.5, 500); c.textBaseline = "middle";
   c.textAlign = "right"; c.fillText("STEP", w - pad.r, h - pad.b + 24);
   c.textAlign = "left"; c.fillText("CROSS-ENTROPY, PER CHARACTER", pad.l, pad.t - 12);
   if (!LOSSES.length) {
-    c.fillStyle = QUIET; c.font = MONO(11, 500); c.textAlign = "center";
-    c.fillText("PRESS TRAIN", w / 2, h / 2); return;
+    c.fillStyle = QUIET; c.font = MONO(10, 500); c.textAlign = "center";
+    c.fillText("THE LOSS CURVE WILL DRAW ITSELF HERE", w / 2, h / 2); return;
   }
   const top = Math.max(...LOSSES), bot = Math.max(Math.min(...LOSSES) * .85, 1e-3);
   const Y = (v) => pad.t + ((Math.log10(Math.max(v, bot)) - Math.log10(top)) /
@@ -615,8 +627,13 @@ async function drawHeads() {
 
 /* ---- 04 the gradients ---- */
 function drawScatter(rows) {
-  const { c, w, h } = ctx2($("#scatter"), 330);
+  const { c, w, h } = ctx2($("#scatter"), rows.length ? 330 : 110);
   const pad = { l: 56, r: 20, t: 26, b: 44 };
+  if (!rows.length) {
+    c.fillStyle = QUIET; c.font = MONO(10, 500);
+    c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillText("ONE POINT PER WEIGHT, ONCE YOU RUN IT", w / 2, h / 2); return;
+  }
   const LO = -9, HI = 1;
   const P = (v) => (Math.max(LO, Math.min(HI, Math.log10(Math.max(Math.abs(v), 1e-12)))) - LO) / (HI - LO);
   const X = (v) => pad.l + P(v) * (w - pad.l - pad.r);
