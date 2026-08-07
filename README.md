@@ -10,19 +10,10 @@ gradient I derived by hand, with the code that produced them.
 
 | | | |
 |---|---|---|
-| **00** | Build the model | set the width, heads, blocks and feed-forward, and everything below re-points at yours |
-| **01** | One derivative | pick any weight, watch it measured against the definition |
-| **02** | All 1,312 | the whole audit, on tokens you type |
-| **03** | Break it | drop a term from a backward pass and see who notices |
-| **04** | Epsilon | why the step is 1e-5 and not smaller |
-| **05** | Position | exact until the context window slides |
-| **06** | Train it | 400 steps, then a prompt of your choosing |
-
-Or open the notebook, which does the three checks a browser can't:
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/superkush06/transformer-from-scratch/blob/main/notebooks/audit.ipynb)
-The gradients are diffed against PyTorch autograd there, agreeing to about
-`1e-15` in float64, which is a stronger check than the central differences
-below because autograd doesn't share my forward pass.
+| **01** | Teach it | paste any text and watch it learn to write, in about twenty seconds |
+| **02** | Talk to it | prompt it, see the next-character distribution, drag the temperature |
+| **03** | Read its mind | every attention head over a string you choose |
+| **04** | Check the maths | every gradient in that run, against the definition of a derivative |
 
 Nothing there is precomputed. The page runs this package under Pyodide, so
 every figure is the library answering in your tab, and the batch it audits is

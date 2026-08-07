@@ -1,15 +1,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>transformer-from-scratch: audit the chain rule</title>
-<meta name="description" content="A GPT whose every gradient I derived by hand, small enough to audit completely. Feed it your own tokens, check any of its 1,312 partial derivatives against the definition of a derivative, then break one on purpose and watch what the loss curve fails to notice. Runs in your browser." />
+<title>transformer-from-scratch: a GPT you can train on your own text</title>
+<meta name="description" content="Paste any text and watch a 41,000-parameter GPT learn it in your browser, in about six seconds. Then read its attention, talk to it, and check that every gradient in the run was derived by hand. No autograd, no PyTorch, no server." />
 <link rel="canonical" href="https://superkush06.github.io/transformer-from-scratch/demo/" />
 <meta property="og:type" content="article" />
-<meta property="og:title" content="transformer-from-scratch: audit the chain rule" />
-<meta property="og:description" content="1,312 hand-derived partial derivatives, checked against the definition of a derivative on tokens you choose. Break a backward pass and watch the audit catch what training cannot." />
+<meta property="og:title" content="A GPT you can train on your own text, in your browser" />
+<meta property="og:description" content="Paste text, watch it learn, read its attention, then check all 41,472 hand-derived gradients against the definition of a derivative." />
 <meta property="og:url" content="https://superkush06.github.io/transformer-from-scratch/demo/" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="transformer-from-scratch: audit the chain rule" />
-<meta name="twitter:description" content="1,312 hand-derived partial derivatives, checked on tokens you choose." />
+<meta name="twitter:title" content="A GPT you can train on your own text, in your browser" />
+<meta name="twitter:description" content="Paste text, watch it learn, then audit every gradient." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&display=swap" rel="stylesheet" />
@@ -174,308 +174,227 @@
     header { padding-top: 3rem } h1 { font-size: 2.1rem }
     .dek { font-size: 1.15rem } p { font-size: 1.1rem }
   }
+
+  /* the reader's corpus */
+  textarea { width: 100%; min-height: 7.5rem; resize: vertical;
+             font-family: "IBM Plex Mono", Menlo, monospace; font-size: .82rem;
+             line-height: 1.65; color: var(--ink); background: none;
+             border: 1px solid var(--hair); border-radius: 3px;
+             padding: .8rem .9rem; margin-top: 1.2rem }
+  textarea:focus { outline: none; border-color: var(--ink) }
+  /* what it writes back */
+  .out { font-family: "IBM Plex Mono", Menlo, monospace; font-size: .92rem;
+         line-height: 1.75; white-space: pre-wrap; word-break: break-word;
+         margin-top: 1.4rem; min-height: 5.2rem;
+         border-left: 2px solid var(--hand); padding: .2rem 0 .2rem 1.1rem }
+  .out .seed { color: var(--quiet) }
+  .out .cursor { border-left: 2px solid var(--hand); margin-left: 1px;
+                 animation: blink 1s steps(2) infinite }
+  @keyframes blink { 50% { opacity: 0 } }
+  /* attention, one canvas per head */
+  .heads { display: grid; gap: 1.1rem; margin-top: 1.6rem;
+           grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)) }
+  .head span { display: block; font-family: "IBM Plex Mono", Menlo, monospace;
+               font-size: .58rem; letter-spacing: .085em; text-transform: uppercase;
+               color: var(--quiet); margin-bottom: .35rem }
+  /* the next-character distribution */
+  .dist { display: flex; gap: 2px; align-items: flex-end; height: 4.4rem;
+          margin-top: 1.2rem }
+  .dist div { flex: 1; display: flex; flex-direction: column;
+              justify-content: flex-end; align-items: center; gap: .3rem }
+  .dist i { display: block; width: 100%; background: var(--hand); border-radius: 1px }
+  .dist b, .dist em { font-family: "IBM Plex Mono", Menlo, monospace;
+                      font-style: normal; font-weight: 500; font-size: .64rem }
+  .dist b { color: var(--ink) } .dist em { color: var(--quiet); font-size: .56rem }
 </style>
 
 <div id="prog"></div>
 <nav aria-label="Contents">
-  <a href="#one"><i>01</i>One derivative</a>
-  <a href="#two"><i>02</i>All 1,312</a>
-  <a href="#three"><i>03</i>Break it</a>
-  <a href="#four"><i>04</i>Epsilon</a>
-  <a href="#five"><i>05</i>Position</a>
-  <a href="#six"><i>06</i>Train it</a>
+  <a href="#one"><i>01</i>Teach it</a>
+  <a href="#two"><i>02</i>Talk to it</a>
+  <a href="#three"><i>03</i>Read its mind</a>
+  <a href="#four"><i>04</i>Check the maths</a>
 </nav>
 
 <header class="text">
-  <span class="m">An interactive audit &nbsp;::&nbsp; six experiments &nbsp;::&nbsp; your tokens, not mine</span>
-  <h1>transformer&#8209;from&#8209;scratch: audit the chain rule</h1>
-  <p class="dek">I wrote a GPT in NumPy with no autograd, and derived every backward pass by
-    hand. Hand derivations are easy to get subtly wrong, so the model is small enough that
-    every partial derivative can be checked against the definition of a derivative. There are
-    1,312 of them, and this page checks them in your tab, on tokens you choose.</p>
+  <span class="m">Runs in this tab &nbsp;::&nbsp; nothing precomputed &nbsp;::&nbsp; your text, not mine</span>
+  <h1>A GPT you can train on your own text</h1>
+  <p class="dek">Paste anything below and a 41,000-parameter transformer learns it here, in
+    your browser, in about six seconds. Then read what its attention heads are doing and ask
+    it to write. I wrote every backward pass in it by hand, so the last section checks them.</p>
   <div class="banner">
-    <span><b>Model</b> 2 blocks &middot; d=8 &middot; 2 heads</span>
-    <span><b>Parameters</b> 1,312 in 29 tensors</span>
+    <span><b>Written in</b> NumPy</span>
     <span><b>Autograd</b> none</span>
+    <span><b>Server</b> none</span>
     <span><b>Status</b> <em id="boot">booting</em></span>
   </div>
 </header>
 
 <div class="text">
-  <p>A backward pass is a claim: change this weight by a little and the loss moves by this
-    much, per unit. That claim is checkable without any calculus at all. Nudge the weight,
-    measure what the loss actually did, and divide. If my algebra was right the two numbers
-    agree; if I dropped a term they don't.</p>
-  <p>What follows is that check, run on the real package compiled to WebAssembly. Nothing here
-    is precomputed, which is why the audit takes about a second. The first thing I'd like you
-    to do is change the data it runs on, because a page that only ever works on the batch I
-    picked is not evidence of much.</p>
+  <p>Almost everything you have read about transformers was written with PyTorch doing the
+    calculus. This one has no <code>.backward()</code> anywhere in it. I derived the gradient
+    of attention, LayerNorm, GELU and cross-entropy on paper and typed each one out as
+    explicit NumPy, then compiled the package to WebAssembly so it can run here.</p>
+  <p>Which means the thing training below is the same code you can read in the repository,
+    and the gradients moving its weights are ones I worked out by hand. The last section
+    checks all 41,472 of them against the definition of a derivative, on the exact model you
+    are about to train.</p>
 </div>
 
-<!-- ============================= 01 ============================= -->
-<div class="text open sect-first" id="zero">
-  <div class="onum">00</div>
-  <span class="m">Before anything else &middot; build the model</span>
-  <h2>Choose what you want me to be right about</h2>
-  <p class="thesis">1,312 derivatives is what the default model happens to
-    have. Change the architecture and it becomes a different number, and every
-    experiment below re-points at your model.</p>
+<!-- 01 -->
+<div class="text open sect-first" id="one">
+  <div class="onum">01</div>
+  <span class="m">Teach it something</span>
+  <h2>Give it text. Watch it learn to write.</h2>
+  <p class="thesis">Character by character, from nothing. Paste your own or keep the default,
+    then press train and read the samples as they come.</p>
 </div>
 
 <div class="wide">
+  <textarea id="corpus" spellcheck="false" aria-label="text for the model to learn"></textarea>
+  <div class="why" id="cWhy">loading</div>
   <div class="knobs">
     <div class="knob">
-      <div class="lab"><b>Width d_model</b><i id="aD">8</i></div>
+      <div class="lab"><b>Width</b><i id="dV">48</i></div>
       <div class="seg" id="dSeg"></div>
     </div>
     <div class="knob">
-      <div class="lab"><b>Heads</b><i id="aH">2</i></div>
-      <div class="seg" id="hSeg"></div>
+      <div class="lab"><b>Context</b><i id="cV">32</i></div>
+      <div class="seg" id="ctxSeg"></div>
     </div>
     <div class="knob">
-      <div class="lab"><b>Blocks</b><i id="aB">2</i></div>
-      <div class="seg" id="nSeg"></div>
+      <div class="lab"><b>Blocks</b><i id="bV">2</i></div>
+      <div class="seg" id="bSeg"></div>
     </div>
     <div class="knob">
-      <div class="lab"><b>Feed-forward</b><i id="aF">16</i></div>
-      <div class="seg" id="fSeg"></div>
+      <div class="lab"><b>Steps</b><i id="sV">600</i></div>
+      <div class="seg" id="sSeg"></div>
     </div>
   </div>
-  <div class="tiles" id="aTiles"></div>
+  <figure><canvas id="loss"></canvas></figure>
+  <div class="out" id="live"><span class="seed">press train</span></div>
+  <div class="tiles" id="tTiles"></div>
+  <div class="bar">
+    <span>
+      <button class="m" id="run">&#9654; train</button>
+      &nbsp;&nbsp;<button class="m" id="reset">&#8635; start over</button>
+    </span>
+    <span class="m" id="tState">not trained</span>
+  </div>
 </div>
 
-<div class="text"><div class="finding"><span class="m">Finding &middot; the model</span>
-  <p id="f0">Every panel below runs on whatever you set here. The parameter
-    count, the tensor list, the audit, the training, all of it.</p></div></div>
+<div class="text"><div class="finding"><span class="m">Finding &middot; one</span>
+  <p id="f1">The sample above regenerates every 25 steps, so you can watch it cross from
+    noise into whatever you gave it.</p></div></div>
 
-<div class="text open" id="one">
-  <div class="onum">01</div>
-  <span class="m">Experiment one &middot; one derivative</span>
-  <h2>Pick a weight. Watch me measure it.</h2>
-  <p class="thesis">Two independent routes to the same number: the algebra I did on paper, and
-    the difference quotient that needs no algebra at all.</p>
+<!-- 02 -->
+<div class="text open" id="two">
+  <div class="onum">02</div>
+  <span class="m">Talk to it</span>
+  <h2>Write a prompt. Watch it answer, one character at a time.</h2>
+  <p class="thesis">The bars are what it thinks comes next, before it commits. Temperature
+    decides how much notice it takes of them.</p>
 </div>
 
 <div class="wide">
+  <div class="entry" id="pEntry">
+    <input id="prompt" value="to be " spellcheck="false" aria-label="prompt" />
+  </div>
+  <div class="why" id="pWhy">type here and the distribution below updates on every keystroke</div>
+  <div class="dist" id="dist"></div>
   <div class="knobs">
     <div class="knob">
-      <div class="lab"><b>Your tokens</b><i id="bWhat">the default batch</i></div>
-      <div class="entry" id="bEntry">
-        <input id="bIn" value="1 2 1 2 5 6" spellcheck="false"
-               aria-label="token ids, 0 to 6, space separated, semicolons between rows" />
-      </div>
-      <div class="why" id="bWhy">ids 0 to 6, up to 7 per row, use ; for a second row</div>
+      <div class="lab"><b>Temperature</b><i id="tempV">0.5</i></div>
+      <input type="range" id="temp" min="0" max="1.4" step="0.1" value="0.5"
+             style="width:100%;accent-color:#1B6CA8" aria-label="temperature" />
+      <div class="why" id="tWhy">0 always takes the top bar; higher rolls the dice</div>
     </div>
     <div class="knob">
-      <div class="lab"><b>Tensor</b><i id="tShape"></i></div>
-      <div class="seg" id="tSeg" style="max-height:6.2rem;overflow-y:auto"></div>
-    </div>
-    <div class="knob">
-      <div class="lab"><b>Step size &epsilon;</b><i id="eVal">1e-5</i></div>
-      <input type="range" id="eSl" min="-9" max="-1" step="0.25" value="-5"
-             aria-label="log10 of epsilon" style="width:100%;accent-color:#1B6CA8" />
-      <div class="why" id="eWhy">drag to watch the same derivative get worse</div>
+      <div class="lab"><b>Length</b><i id="nV">160</i></div>
+      <div class="seg" id="nSeg"></div>
     </div>
   </div>
-  <figure><div class="cells" id="cells"></div>
-    <div class="why">shade is the size of that weight's gradient on your batch, log scale;
-      outlined cells have none, because your tokens never reach them</div></figure>
-  <div class="tiles" id="dTiles"></div>
+  <div class="out" id="gen"><span class="seed">train it first</span></div>
   <div class="bar">
-    <span class="m" id="bState">ready</span>
-    <span class="m" id="tPick">click a square above</span>
+    <span><button class="m" id="go">&#9654; write</button></span>
+    <span class="m" id="gState">waiting on a trained model</span>
   </div>
 </div>
 
-<div class="text"><div class="finding"><span class="m">Finding &middot; experiment one</span>
-  <p id="f1">Every square above is one scalar in the model. Click one and I'll perturb it by
-    &plusmn;&epsilon;, run two full forward passes, and put the measurement next to what my
-    hand-derived code claims.</p></div></div>
+<div class="text"><div class="finding"><span class="m">Finding &middot; two</span>
+  <p id="f2">Nothing here is retrieval. It has no copy of your text, only 41,472 numbers that
+    were nudged toward it.</p></div></div>
 
-<!-- ============================= 02 ============================= -->
-<div class="text open" id="two">
-  <div class="onum">02</div>
-  <span class="m">Experiment two of six &middot; the whole audit</span>
-  <h2>Every derivative in the model, at once</h2>
-  <p class="thesis">One check is an anecdote. The claim is that all 1,312 hold, on whatever
-    data you gave me, so the honest thing is to run all 1,312.</p>
+<!-- 03 -->
+<div class="text open" id="three">
+  <div class="onum">03</div>
+  <span class="m">Read its mind</span>
+  <h2>Where each head is looking</h2>
+  <p class="thesis">One square per pair of characters: how much the row attends to the
+    column. The top-right triangle is empty because nothing may read the future.</p>
+</div>
+
+<div class="wide">
+  <div class="entry" id="aEntry">
+    <input id="attnIn" value="to be or not to be" spellcheck="false"
+           aria-label="text to read attention over" />
+  </div>
+  <div class="why" id="aWhy">any string from your alphabet</div>
+  <div class="heads" id="heads"></div>
+  <div class="bar">
+    <span><button class="m" id="aRun">&#9654; read the heads</button></span>
+    <span class="m" id="aState">train it first</span>
+  </div>
+</div>
+
+<div class="text"><div class="finding"><span class="m">Finding &middot; three</span>
+  <p id="f3">Before training these are close to flat: every head spreads its weight evenly
+    over everything the mask allows. Training is what puts structure in them.</p></div></div>
+
+<!-- 04 -->
+<div class="text open" id="four">
+  <div class="onum">04</div>
+  <span class="m">Check the maths</span>
+  <h2>Every gradient in that, derived by hand</h2>
+  <p class="thesis">A derivative is defined as a limit of a difference quotient, so it can be
+    checked with no calculus at all: nudge a weight, see what the loss does, divide.</p>
+</div>
+
+<div class="text">
+  <p>This runs on the model you just trained, not a smaller stand-in. For each weight it
+    perturbs that one number by &plusmn;&epsilon;, runs two full forward passes, and compares
+    what the loss actually did against what my hand-written backward pass claimed it would.
+    The two sides share no code: one is algebra I did on paper, the other is arithmetic.</p>
 </div>
 
 <div class="wide">
   <figure><canvas id="scatter"></canvas></figure>
-  <div class="tiles" id="auTiles"></div>
-  <div class="bar">
-    <span><button class="m" id="auRun">&#9654; run all 1,312</button></span>
-    <span class="m" id="auState">not run</span>
-  </div>
-</div>
-
-<div class="text"><div class="finding"><span class="m">Finding &middot; experiment two</span>
-  <p id="f2">Each point is one scalar: what I derived on one axis, what the difference quotient
-    measured on the other. They should sit on the diagonal across every decade.</p></div></div>
-
-<!-- ============================= 03 ============================= -->
-<div class="text open" id="three">
-  <div class="onum">03</div>
-  <span class="m">Experiment three of six &middot; break it on purpose</span>
-  <h2>Drop a term and see who notices</h2>
-  <p class="thesis">These are the mistakes I could plausibly have made, and nearly did. Each
-    one is a term left out of a derivation, and each is invisible in the forward pass.</p>
-</div>
-
-<div class="text">
-  <p>LayerNorm divides by a standard deviation that depends on every coordinate, so
-    differentiating it produces a term in <code>x_hat * sum(d_x_hat * x_hat)</code>. Treat the
-    normalisation as a fixed scale and that term never appears. GELU is <code>x&middot;&Phi;(x)</code>,
-    so its derivative is <code>&Phi;(x) + x&middot;&phi;(x)</code>; read it as a gate on <code>x</code>
-    and you keep only the first half. Both look perfectly reasonable written down, which is the
-    problem.</p>
-</div>
-
-<div class="wide">
-  <div class="knobs">
-    <div class="knob">
-      <div class="lab"><b>Derivation</b><i id="bugWhat">as written</i></div>
-      <div class="seg" id="bugSeg"></div>
-    </div>
-  </div>
-  <div class="board" id="board"></div>
-  <div class="tiles" id="bgTiles"></div>
+  <div class="tiles" id="gTiles"></div>
   <div class="bar">
     <span>
-      <button class="m" id="bgAudit">&#9654; re-audit</button>
-      &nbsp;&nbsp;<button class="m" id="bgTrain">&#9654; train both ways</button>
+      <button class="m" id="gRun">&#9654; check the gradients</button>
+      &nbsp;&nbsp;<button class="m" id="bRun">&#9654; now break one on purpose</button>
     </span>
-    <span class="m" id="bgState">audit not run</span>
-  </div>
-  <figure><canvas id="cmp"></canvas></figure>
-</div>
-
-<div class="text"><div class="finding"><span class="m">Finding &middot; experiment three</span>
-  <p id="f3">Switch a bug on and re-audit. Then train with it in, which is the part worth
-    staying for.</p></div></div>
-
-<!-- ============================= 04 ============================= -->
-<div class="text open" id="four">
-  <div class="onum">04</div>
-  <span class="m">Experiment four of six &middot; the size of the nudge</span>
-  <h2>Why the step is 1e&#8209;5 and not smaller</h2>
-  <p class="thesis">The difference quotient has two errors pulling opposite ways, and the step
-    that balances them is not the smallest one available.</p>
-</div>
-
-<div class="text">
-  <p>Truncation error falls like &epsilon;&sup2; as the step shrinks, because the quotient is a
-    Taylor expansion cut short. Floating-point cancellation grows like &eta;/&epsilon;, because
-    subtracting two losses that agree in fifteen digits throws most of them away. Their sum is
-    a V, and I chose &epsilon; at the bottom of it.</p>
-</div>
-
-<div class="wide">
-  <figure><canvas id="vcurve"></canvas></figure>
-  <div class="tiles" id="epTiles"></div>
-  <div class="bar">
-    <span><button class="m" id="epRun">&#9654; sweep nine decades</button></span>
-    <span class="m" id="epState">not run</span>
+    <span class="m" id="gState2">not run</span>
   </div>
 </div>
 
-<div class="text"><div class="finding"><span class="m">Finding &middot; experiment four</span>
-  <p id="f4">Sweep it and watch both walls of the V appear.</p></div></div>
-
-<!-- ============================= 05 ============================= -->
-<div class="text open" id="five">
-  <div class="onum">05</div>
-  <span class="m">Experiment five of six &middot; where it stops working</span>
-  <h2>Exact until the window slides</h2>
-  <p class="thesis">Correct gradients get you a model that fits its training data. They say
-    nothing about whether it learned the thing you meant.</p>
-</div>
-
-<div class="wide">
-  <div class="knobs">
-    <div class="knob">
-      <div class="lab"><b>The sequence to learn</b><i id="pdWhat">1 2 3 4 5</i></div>
-      <div class="entry" id="pdEntry">
-        <input id="pdIn" value="1 2 3 4 5" spellcheck="false"
-               aria-label="the repeating sequence, ids 0 to 6" />
-      </div>
-      <div class="why" id="pdWhy">a period shorter than the 6-token window behaves differently</div>
-    </div>
-    <div class="knob">
-      <div class="lab"><b>Steps each</b><i id="poStepsV">400</i></div>
-      <div class="seg" id="poSeg"></div>
-    </div>
-  </div>
-  <figure><canvas id="pos"></canvas></figure>
-  <div class="bar">
-    <span><button class="m" id="poRun">&#9654; train both</button></span>
-    <span class="m" id="poState">not run</span>
-  </div>
-</div>
-
-<div class="text"><div class="finding"><span class="m">Finding &middot; experiment five</span>
-  <p id="f5">I train the same architecture twice. One sees sequences that always start at the
-    same phase, the other sees every phase. Both fit what they were shown.</p></div></div>
-
-<!-- ============================= 06 ============================= -->
-<div class="text open" id="six">
-  <div class="onum">06</div>
-  <span class="m">Experiment six of six &middot; end to end</span>
-  <h2>Train it, then ask it something</h2>
-  <p class="thesis">Four hundred steps of Adam on 1,312 parameters, every gradient from NumPy I
-    wrote out by hand, and then a prompt of your choosing.</p>
-</div>
-
-<div class="wide">
-  <div class="knobs">
-    <div class="knob">
-      <div class="lab"><b>Seed</b><i id="sVal">0</i></div>
-      <div class="seg" id="sSeg"></div>
-    </div>
-    <div class="knob">
-      <div class="lab"><b>Learning rate</b><i id="lVal">5e-3</i></div>
-      <div class="seg" id="lSeg"></div>
-    </div>
-    <div class="knob">
-      <div class="lab"><b>Temperature</b><i id="tVal">0.0</i></div>
-      <div class="seg" id="tempSeg"></div>
-    </div>
-    <div class="knob">
-      <div class="lab"><b>Your prompt</b><i id="pWhat">1 2 3</i></div>
-      <div class="entry" id="pEntry">
-        <input id="pIn" value="1 2 3" spellcheck="false" aria-label="prompt token ids" />
-      </div>
-      <div class="why" id="pWhy">ids 0 to 6, the model continues greedily</div>
-    </div>
-  </div>
-  <figure><canvas id="loss"></canvas></figure>
-  <div class="tiles" id="trTiles"></div>
-  <div class="bar">
-    <span>
-      <button class="m" id="trRun">&#9654; train 400 steps</button>
-      &nbsp;&nbsp;<button class="m" id="trGo">&#9654; generate</button>
-    </span>
-    <span class="m" id="trState">not trained</span>
-  </div>
-</div>
-
-<div class="text"><div class="finding"><span class="m">Finding &middot; experiment six</span>
-  <p id="f6">Train it, then type a prompt and press generate.</p></div></div>
+<div class="text"><div class="finding"><span class="m">Finding &middot; four</span>
+  <p id="f4">Run it. Every point should sit on the diagonal, across every decade.</p></div></div>
 
 <div class="endrule"><div></div></div>
 
 <div class="text">
-  <p>Six experiments, one model, and every number above computed while you read. The same 1,312
-    checks run in CI on every push, and
-    <a href="https://github.com/superkush06/transformer-from-scratch/blob/main/docs/validation.md">validation.md</a>
-    holds the rest of the evidence, including the places where the idealised error analysis and
-    the measured one disagree.</p>
+  <p>The package is
+    <a href="https://github.com/superkush06/transformer-from-scratch">transformer-from-scratch</a>,
+    about 600 lines of NumPy with no runtime dependencies. There is a
+    <a href="https://colab.research.google.com/github/superkush06/transformer-from-scratch/blob/main/notebooks/audit.ipynb">notebook</a>
+    that does the checks a browser cannot, including diffing every gradient against PyTorch's
+    autograd, where the two agree to about <span class="n">1e-15</span>.</p>
   <footer>
     <span class="n" id="runs">0</span> forward and backward passes ran in this tab while you
-    read this. Nothing above was precomputed, which is why the audit takes a moment. The package
-    is <a href="https://github.com/superkush06/transformer-from-scratch">transformer-from-scratch</a>,
-    and this page adds no model logic of its own; it calls into that package through
+    read this. Nothing above was precomputed. This page adds no model logic of its own; it
+    calls into the package through
     <a href="https://github.com/superkush06/transformer-from-scratch/blob/main/docs/demo/tfsdemo.py">tfsdemo.py</a>.
   </footer>
 </div>
@@ -487,773 +406,330 @@
 const CSS = getComputedStyle(document.documentElement);
 const C = (n) => CSS.getPropertyValue(n).trim();
 const INK = C("--ink"), QUIET = C("--quiet"), HAIR = C("--hair"),
-      HAND = C("--hand"), MEAS = C("--meas"), OK = C("--ok"), BAD = C("--bad"),
-      PAPER = C("--paper");
+      HAND = C("--hand"), MEAS = C("--meas"), OK = C("--ok"), BAD = C("--bad");
 const $ = (s) => document.querySelector(s);
 const MONO = (px, w) => `${w || 400} ${px}px "IBM Plex Mono", Menlo, monospace`;
-let py = null, passes = 0, busy = false;
+let py = null, busy = false, passes = 0, trained = false, ARCH = null;
+let CFG = { d: 48, ctx: 32, blocks: 2, steps: 600 };
+let LOSSES = [], TEMP = 0.5, NGEN = 160, LAST = null;
 
 const bump = (n) => { passes += n; $("#runs").textContent = passes.toLocaleString(); };
-const yieldPaint = () => document.hidden ? Promise.resolve()
+const paint = () => document.hidden ? Promise.resolve()
   : new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+const esc = (s) => String(s).replace(/[&<>]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const sci = (x, d) => x === 0 ? "0" : Number(x).toExponential(d === undefined ? 2 : d);
 async function pyJSON(expr) {
   return JSON.parse(await py.runPythonAsync(`import json; json.dumps(${expr})`));
 }
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const sci = (x, d) => x === 0 ? "0" : (!isFinite(x) ? "inf"
-  : Number(x).toExponential(d === undefined ? 2 : d));
+const q = (s) => JSON.stringify(s);
 
-function ctx(cv, cssH) {
+function ctx2(cv, cssH) {
   const w = cv.parentElement.clientWidth;
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const dpr = Math.min(2, devicePixelRatio || 1);
   cv.width = Math.round(w * dpr); cv.height = Math.round(cssH * dpr);
   cv.style.height = cssH + "px";
   const c = cv.getContext("2d");
-  c.setTransform(dpr, 0, 0, dpr, 0, 0);
-  c.clearRect(0, 0, w, cssH);
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, cssH);
   return { c, w, h: cssH };
 }
 function tiles(host, rows) {
-  host.innerHTML = rows.map(([k, v, cls]) =>
-    `<div class="tile"><span>${esc(k)}</span><b class="${cls || ""}">${esc(v)}</b></div>`).join("");
+  host.innerHTML = rows.map(([k, v, cl]) =>
+    `<div class="tile"><span>${esc(k)}</span><b class="${cl || ""}">${esc(v)}</b></div>`).join("");
 }
-/* chart furniture: mono, uppercase, at the end of the axis, no domain line */
-function furniture(c, w, h, pad, xlab, ylab) {
-  c.fillStyle = QUIET; c.font = MONO(9.5, 500);
-  c.textBaseline = "middle";
-  if (xlab) { c.textAlign = "right"; c.fillText(xlab, w - pad.r, h - pad.b + 26); }
-  if (ylab) { c.textAlign = "left"; c.fillText(ylab, pad.l, pad.t - 13); }
-}
-function seg(host, items, cur, onPick) {
+function seg(host, items, cur, pick) {
   host.innerHTML = items.map((it) =>
-    `<button data-v="${esc(it.v)}" class="${String(it.v) === String(cur) ? "on" : ""}${it.warn ? " warn" : ""}">${esc(it.t)}</button>`).join("");
+    `<button data-v="${esc(it.v)}" class="${String(it.v) === String(cur) ? "on" : ""}">${esc(it.t)}</button>`).join("");
   host.onclick = (e) => {
     const b = e.target.closest("button[data-v]");
     if (!b || busy) return;
     [...host.querySelectorAll("button")].forEach((x) => x.classList.toggle("on", x === b));
-    onPick(b.dataset.v);
+    pick(b.dataset.v);
   };
 }
 
-/* ---------------- the reader's batch ---------------- */
-let BATCH = null;
-function parseTokens(s) {
-  const rows = s.split(";").map((r) => r.trim()).filter(Boolean)
-    .map((r) => r.split(/[\s,]+/).filter(Boolean).map(Number));
-  if (!rows.length) throw new Error("type some token ids");
-  for (const r of rows) {
-    if (r.length < 2) throw new Error("each row needs at least 2 ids");
-    if (r.length > 7) throw new Error("at most 7 ids per row");
-    for (const t of r) {
-      if (!Number.isInteger(t) || t < 0 || t > 6) throw new Error("ids must be whole numbers 0 to 6");
+/* ---- 01 teach it ---- */
+function drawLoss() {
+  const { c, w, h } = ctx2($("#loss"), 250);
+  const pad = { l: 54, r: 20, t: 24, b: 38 };
+  c.fillStyle = QUIET; c.font = MONO(9.5, 500); c.textBaseline = "middle";
+  c.textAlign = "right"; c.fillText("STEP", w - pad.r, h - pad.b + 24);
+  c.textAlign = "left"; c.fillText("CROSS-ENTROPY, PER CHARACTER", pad.l, pad.t - 12);
+  if (!LOSSES.length) {
+    c.fillStyle = QUIET; c.font = MONO(11, 500); c.textAlign = "center";
+    c.fillText("PRESS TRAIN", w / 2, h / 2); return;
+  }
+  const top = Math.max(...LOSSES), bot = Math.max(Math.min(...LOSSES) * .85, 1e-3);
+  const Y = (v) => pad.t + ((Math.log10(Math.max(v, bot)) - Math.log10(top)) /
+    (Math.log10(bot) - Math.log10(top))) * (h - pad.t - pad.b);
+  const X = (i) => pad.l + (i / Math.max(1, CFG.steps - 1)) * (w - pad.l - pad.r);
+  c.strokeStyle = HAIR; c.globalAlpha = .6; c.fillStyle = QUIET; c.font = MONO(9);
+  c.textAlign = "right";
+  for (const g of [4, 2, 1, .5, .2, .1]) {
+    if (g > top || g < bot) continue;
+    c.beginPath(); c.moveTo(pad.l, Y(g)); c.lineTo(w - pad.r, Y(g)); c.stroke();
+    c.globalAlpha = 1; c.fillText(String(g), pad.l - 7, Y(g)); c.globalAlpha = .6;
+  }
+  c.globalAlpha = 1; c.strokeStyle = HAND; c.lineWidth = 1.6; c.beginPath();
+  LOSSES.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v))));
+  c.stroke();
+}
+function showSample(s, seedLen) {
+  const t = s.text;
+  $("#live").innerHTML = `<span class="seed">${esc(t.slice(0, seedLen))}</span>` +
+    esc(t.slice(seedLen)) + `<span class="cursor"></span>`;
+}
+async function applyCorpus() {
+  const text = $("#corpus").value;
+  try {
+    const info = await pyJSON(`d.corpus_set(${q(text)})`);
+    $("#cWhy").classList.remove("bad");
+    $("#cWhy").textContent =
+      `${info.chars.toLocaleString()} characters, ${info.vocab} distinct: ${info.alphabet}`;
+    return true;
+  } catch (err) {
+    $("#cWhy").classList.add("bad");
+    $("#cWhy").textContent = String(err).split("\n").filter(Boolean).pop().slice(0, 120);
+    return false;
+  }
+}
+async function train() {
+  if (busy) return;
+  if (!await applyCorpus()) return;
+  busy = true; $("#run").disabled = true; trained = false;
+  LOSSES = []; $("#gState").textContent = "waiting on a trained model";
+  ARCH = await pyJSON(`d.gpt_begin(d_model=${CFG.d}, n_heads=4, n_blocks=${CFG.blocks}, ` +
+                      `d_ff=${CFG.d * 2}, ctx=${CFG.ctx})`);
+  const t0 = performance.now();
+  while (LOSSES.length < CFG.steps) {
+    const r = await pyJSON("d.gpt_step(25)");
+    LOSSES.push(...r.losses); bump(25);
+    const n = LOSSES.length < CFG.steps * 0.4 ? 48 : 90;
+    const s = await pyJSON(`d.gpt_sample(n=${n}, temperature=0.5)`);
+    LAST = s; showSample(s, s.prompt.length);
+    $("#tState").textContent = `step ${r.step} of ${CFG.steps}`;
+    tiles($("#tTiles"), [
+      ["parameters", ARCH.params.toLocaleString()],
+      ["vocabulary", `${ARCH.vocab} characters`],
+      ["context", `${ARCH.ctx} characters`],
+      ["step", String(r.step)],
+      ["loss", r.last.toFixed(3)],
+      ["elapsed", `${((performance.now() - t0) / 1000).toFixed(1)} s`]]);
+    drawLoss(); await paint();
+  }
+  trained = true;
+  const secs = ((performance.now() - t0) / 1000).toFixed(1);
+  $("#tState").textContent = `trained in ${secs} s`;
+  $("#gState").textContent = "ready"; $("#aState").textContent = "ready";
+  $("#f1").innerHTML = `From <span class="n">${LOSSES[0].toFixed(2)}</span> down to
+    <span class="n">${LOSSES[LOSSES.length - 1].toFixed(3)}</span> in
+    <span class="n">${secs}</span> seconds, on
+    <span class="n">${ARCH.params.toLocaleString()}</span> parameters that started as random
+    numbers. A loss near <span class="n">${Math.log(ARCH.vocab).toFixed(2)}</span> would mean it
+    had learned nothing at all, since that is what guessing uniformly over
+    <span class="n">${ARCH.vocab}</span> characters costs. Every step of that was Adam walking
+    downhill on gradients I derived by hand.`;
+  busy = false; $("#run").disabled = false;
+  await drawHeads(); await distribution();
+}
+
+/* ---- 02 talk to it ---- */
+async function distribution() {
+  if (!trained || busy) return;
+  const r = await pyJSON(`d.gpt_next(${q($("#prompt").value)}, k=8)`);
+  bump(1);
+  const mx = Math.max(...r.top.map((t) => t.p), 1e-9);
+  $("#dist").innerHTML = r.top.map((t) =>
+    `<div><b>${t.p >= .005 ? (t.p * 100).toFixed(0) + "%" : ""}</b>
+      <i style="height:${Math.max(2, (t.p / mx) * 100)}%"></i>
+      <em>${esc(t.ch === " " ? "␣" : t.ch)}</em></div>`).join("");
+}
+async function write() {
+  if (busy || !trained) return;
+  busy = true; $("#go").disabled = true;
+  $("#gState").textContent = "writing";
+  const s = await pyJSON(`d.gpt_sample(${q($("#prompt").value)}, n=${NGEN}, temperature=${TEMP})`);
+  bump(NGEN);
+  // reveal it a character at a time, the way it was actually produced
+  const seed = s.prompt.length, body = s.text.slice(seed);
+  for (let i = 0; i <= body.length; i += 2) {
+    $("#gen").innerHTML = `<span class="seed">${esc(s.text.slice(0, seed))}</span>` +
+      esc(body.slice(0, i)) + `<span class="cursor"></span>`;
+    if (i % 10 === 0) await paint();
+  }
+  $("#gState").textContent = "done";
+  $("#f2").innerHTML = `That came out of <span class="n">${ARCH.params.toLocaleString()}</span>
+    numbers at temperature <span class="n">${TEMP.toFixed(1)}</span>, one character at a time,
+    each one sampled from a distribution over the
+    <span class="n">${ARCH.vocab}</span> characters in your alphabet. It holds no copy of your
+    text. ${TEMP < 0.15
+      ? `At this temperature it always takes the tallest bar, which is why it repeats itself.`
+      : (TEMP > 0.9
+        ? `This high, it ignores its own confidence often enough to invent spellings.`
+        : `Drag the temperature to either end and the character changes completely.`)}`;
+  busy = false; $("#go").disabled = false;
+}
+
+/* ---- 03 attention ---- */
+function drawHead(cv, w2, chars) {
+  const n = chars.length;
+  const { c, w, h } = ctx2(cv, cv.parentElement.clientWidth);
+  const pad = 16, cell = (Math.min(w, h) - pad) / n;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const v = w2[i][j];
+      if (j > i) { c.fillStyle = "rgba(53,50,44,.035)"; }
+      else {
+        const a = Math.min(1, Math.pow(v, 0.6));
+        c.fillStyle = `rgba(27,108,168,${.05 + .9 * a})`;
+      }
+      c.fillRect(pad + j * cell, pad + i * cell, cell - .5, cell - .5);
     }
   }
-  return rows;
-}
-async function applyBatch() {
-  let rows;
-  try { rows = parseTokens($("#bIn").value); }
-  catch (err) {
-    $("#bEntry").classList.add("bad"); $("#bWhy").classList.add("bad");
-    $("#bWhy").textContent = err.message; return false;
+  c.fillStyle = QUIET; c.font = MONO(Math.min(8, cell * .8));
+  c.textAlign = "center"; c.textBaseline = "middle";
+  for (let i = 0; i < n && cell > 5; i++) {
+    c.fillText(chars[i], pad + i * cell + cell / 2, pad / 2);
+    c.textAlign = "right";
+    c.fillText(chars[i], pad - 3, pad + i * cell + cell / 2);
+    c.textAlign = "center";
   }
-  $("#bEntry").classList.remove("bad"); $("#bWhy").classList.remove("bad");
-  BATCH = await pyJSON(`d.set_batch(${JSON.stringify(rows)})`);
+}
+async function drawHeads() {
+  if (!trained) return;
+  const r = await pyJSON(`d.gpt_attention(${q($("#attnIn").value)})`);
   bump(1);
-  $("#bWhat").textContent = `${BATCH.rows} x ${BATCH.width}`;
-  $("#bWhy").textContent =
-    `loss ${BATCH.loss.toFixed(4)} on this batch, gradient norm ${BATCH.grad_norm.toFixed(3)}`;
-  // anything measured against the old data is now stale
-  tiles($("#dTiles"), []); tiles($("#auTiles"), []); tiles($("#bgTiles"), []);
-  $("#auState").textContent = "not run"; $("#bgState").textContent = "audit not run";
-  $("#tPick").textContent = "click a square above";
-  AU = null; drawScatter([], false); paintBoard(null);
-  $("#f2").innerHTML = `Each point is one scalar: what I derived on one axis, what the difference
-    quotient measured on the other. Run it on your batch.`;
-  if (TENS && !ARCH_BUSY) await refreshTensors();
-  return true;
+  $("#heads").innerHTML = r.heads.map((hd, i) =>
+    `<div class="head"><span>block ${hd.block} &middot; head ${hd.head}</span>
+      <canvas id="hd${i}"></canvas></div>`).join("");
+  r.heads.forEach((hd, i) => drawHead($(`#hd${i}`), hd.w, r.chars));
+  $("#aState").textContent = `${r.heads.length} heads over ${r.chars.length} characters`;
+  $("#f3").innerHTML = `Each square is how much the character on the row is reading the
+    character on the column, and the pale upper triangle is the causal mask: position
+    <span class="n">i</span> may only see up to <span class="n">i</span>, which is what makes
+    this a model that predicts rather than one that copies. Compare
+    <span class="n">block 0</span> with <span class="n">block ${ARCH.blocks || 1}</span>. The
+    later blocks are working on what the earlier ones already gathered, and they do not look
+    the same.`;
 }
 
-/* Gradients depend on the batch, so the grid has to be re-read whenever the
-   architecture or the tokens change. Reading it before the batch was set gave
-   colours describing data nothing else was using. */
-async function refreshTensors() {
-  TENS = await pyJSON("d.tensor_list()");
-  if (!TENS.tensors.some((t) => t.name === curT)) curT = TENS.tensors[0].name;
-  curI = 0;
-  seg($("#tSeg"), TENS.tensors.map((t) => ({ v: t.name, t: t.name })), curT,
-    (v) => { curT = v; curI = 0; paintCells(); });
-  paintCells();
-}
-
-/* ---------------- 01 one derivative ---------------- */
-let TENS = null, curT = null, curI = 0, curEps = 1e-5;
-let ARCH = null, curTemp = 0, poSteps = 400, ARCH_BUSY = false;
-
-/* Everything measured is about one architecture. When that changes, anything
-   already on screen is about a model that no longer exists, so it goes. */
-function invalidate(why) {
-  AU = null; VPTS = []; POS = null;
-  tiles($("#dTiles"), []); tiles($("#auTiles"), []); tiles($("#bgTiles"), []);
-  tiles($("#epTiles"), []); tiles($("#trTiles"), []);
-  $("#auState").textContent = "not run";
-  $("#bgState").textContent = "audit not run";
-  $("#epState").textContent = "not run";
-  $("#poState").textContent = "not run";
-  $("#trState").textContent = "not trained";
-  $("#tPick").textContent = "click a square above";
-  TR = { losses: [], step: 0, trained: false };
-  $("#bgTrain").disabled = true; $("#trGo").disabled = true;
-  paintBoard(null); drawScatter([], false); drawCmp(null);
-  drawV([]); drawPos(null); drawLoss();
-  if (why) $("#f2").innerHTML = why;
-}
-
-async function applyArch(patch) {
-  ARCH_BUSY = true;                 // applyBatch below must not re-read tensors
-  const want = { ...ARCH, ...patch };
-  try {
-    ARCH = await pyJSON(`d.set_arch(d_model=${want.d_model}, n_heads=${want.n_heads}, ` +
-                        `n_blocks=${want.n_blocks}, d_ff=${want.d_ff})`);
-  } catch (err) {
-    // heads that do not divide the width; put the control back
-    seg($("#hSeg"), HEADS(ARCH.d_model), ARCH.n_heads, (v) => applyArch({ n_heads: +v }));
-    return;
-  }
-  $("#aD").textContent = ARCH.d_model; $("#aH").textContent = ARCH.n_heads;
-  $("#aB").textContent = ARCH.n_blocks; $("#aF").textContent = ARCH.d_ff;
-  seg($("#hSeg"), HEADS(ARCH.d_model), ARCH.n_heads, (v) => applyArch({ n_heads: +v }));
-  const full = ARCH.full_audit;
-  tiles($("#aTiles"), [
-    ["parameters", ARCH.params.toLocaleString()],
-    ["tensors", String(ARCH.tensors)],
-    ["head width", String(ARCH.head_dim)],
-    ["derivatives to check", full ? ARCH.params.toLocaleString() : "sampled"],
-    ["audit mode", full ? "every scalar" : `${PER_TENSOR} per tensor`,
-      full ? "ok" : ""]]);
-  await applyBatch();
-  ARCH_BUSY = false;
-  await refreshTensors();
-  invalidate();
-  $("#f0").innerHTML = full
-    ? `<span class="n">${ARCH.params.toLocaleString()}</span> parameters across
-       <span class="n">${ARCH.tensors}</span> tensors, and the audit below will check every
-       single one of them against a difference quotient.`
-    : `<span class="n">${ARCH.params.toLocaleString()}</span> parameters across
-       <span class="n">${ARCH.tensors}</span> tensors. That is past the point where measuring
-       every scalar stays interactive, since the cost is two forward passes each and the
-       forward pass grows with the width too. The audit samples
-       <span class="n">${PER_TENSOR}</span> coordinates inside any tensor bigger than that,
-       spread across it rather than taken off the front, which is what CI does on this repo
-       for the same reason.`;
-}
-const PER_TENSOR = 60;
-const HEADS = (d) => [1, 2, 4, 8].filter((h) => d % h === 0).map((h) => ({ v: h, t: String(h) }));
-function paintCells() {
-  const t = TENS.tensors.find((x) => x.name === curT);
-  $("#tShape").textContent = `${t.shape.join(" x ")} = ${t.size}`;
-  const g = t.grads || t.values;
-  const mx = Math.max(...g.map(Math.abs), 1e-12);
-  $("#cells").innerHTML = g.map((gv, i) => {
-    // log scale, because gradients here span five decades and a linear ramp
-    // would show one bright cell and a field of nothing
-    const a = gv === 0 ? 0
-      : Math.min(1, Math.max(0, 1 + Math.log10(Math.abs(gv) / mx) / 5));
-    const col = gv === 0 ? "var(--paper)"
-      : (t.values[i] >= 0 ? `rgba(27,108,168,${.08 + .84 * a})`
-                          : `rgba(192,95,27,${.08 + .84 * a})`);
-    const dead = gv === 0 ? ";box-shadow:inset 0 0 0 1px var(--hair)" : "";
-    return `<button data-i="${i}" style="background:${col}${dead}" class="${i === curI ? "on" : ""}"
-      title="index ${i}: weight ${t.values[i].toFixed(5)}, gradient ${gv.toExponential(2)}"
-      aria-label="scalar ${i}"></button>`;
-  }).join("");
-  // open on a coordinate that has something to show
-  if (!g[curI]) {
-    const live = g.findIndex((v) => v !== 0);
-    if (live >= 0) curI = live;
-  }
-}
-async function measure(i) {
-  if (busy) return;
-  busy = true; curI = i; paintCells();
-  $("#bState").textContent = "two forward passes";
-  const r = await pyJSON(`d.one_derivative(${JSON.stringify(curT)}, ${i}, ${curEps})`);
-  bump(3);
-  $("#bState").textContent = "ready";
-  $("#tPick").textContent = `${curT} index ${i}`;
-  tiles($("#dTiles"), [
-    ["the weight", r.theta.toFixed(6)],
-    ["loss at +eps", r.up.toFixed(10)],
-    ["loss at -eps", r.down.toFixed(10)],
-    ["their difference", sci(r.diff, 3)],
-    ["measured slope", r.central.toFixed(9)],
-    ["what I derived", r.analytic.toFixed(9)],
-    ["relative error", sci(r.rel_err), r.passes ? "ok" : "no"],
-    ["verdict", r.passes ? "agree" : "DISAGREE", r.passes ? "ok" : "no"]]);
-  // A weight the batch never touches has an exactly zero gradient, and both
-  // routes say so. That is a real check rather than a dud, but a panel of
-  // zeros looks broken unless the page says why.
-  if (r.analytic === 0 && r.central === 0) {
-    $("#f1").innerHTML = `Both routes return exactly <span class="n">0</span>, and that is the
-      right answer. <span class="n">${esc(curT)}</span> index <span class="n">${i}</span> never
-      enters the forward pass on the tokens you typed, so the loss cannot depend on it: perturbing
-      it moved the loss by <span class="n">0</span> in the last digit, and my backward pass
-      independently produced a hard zero. Embedding rows for tokens absent from the batch are the
-      usual case. Put that token id into the box above and this cell comes alive.`;
-    busy = false; return;
-  }
-  const digits = r.rel_err > 0 ? Math.max(0, Math.round(-Math.log10(r.rel_err))) : 12;
-  $("#f1").innerHTML = `Two forward passes at <span class="n">&theta;&plusmn;${sci(curEps, 0)}</span>
-    gave losses differing by <span class="n">${sci(r.diff, 3)}</span>. Divide by
-    <span class="n">2&epsilon;</span> and the slope is <span class="s n">${r.central.toFixed(9)}</span>.
-    My hand-derived backward pass said <span class="h n">${r.analytic.toFixed(9)}</span>. They agree to
-    about <span class="n">${digits}</span> significant figures, and the two sides share no code:
-    one is algebra I did on paper, the other is the definition of a derivative, evaluated
-    numerically on the batch you typed.`;
-  busy = false;
-}
-
-/* ---------------- 02 the audit ---------------- */
-let AU = null, VPTS = [], POS = null;
-function drawScatter(rows, done) {
-  const { c, w, h } = ctx($("#scatter"), Math.min(420, Math.max(280, w0() * .42)));
+/* ---- 04 the gradients ---- */
+function drawScatter(rows) {
+  const { c, w, h } = ctx2($("#scatter"), 330);
   const pad = { l: 56, r: 20, t: 26, b: 44 };
   const LO = -9, HI = 1;
-  const X = (v) => pad.l + ((Math.max(LO, Math.min(HI, Math.log10(Math.max(Math.abs(v), 1e-12)))) - LO)
-    / (HI - LO)) * (w - pad.l - pad.r);
-  const Y = (v) => (h - pad.b) - ((Math.max(LO, Math.min(HI, Math.log10(Math.max(Math.abs(v), 1e-12)))) - LO)
-    / (HI - LO)) * (h - pad.t - pad.b);
-  c.strokeStyle = HAIR; c.globalAlpha = .55; c.lineWidth = 1;
-  c.fillStyle = QUIET; c.font = MONO(9);
-  for (let d = LO; d <= HI; d += 2) {
-    c.beginPath(); c.moveTo(X(10 ** d), pad.t); c.lineTo(X(10 ** d), h - pad.b); c.stroke();
-    c.beginPath(); c.moveTo(pad.l, Y(10 ** d)); c.lineTo(w - pad.r, Y(10 ** d)); c.stroke();
+  const P = (v) => (Math.max(LO, Math.min(HI, Math.log10(Math.max(Math.abs(v), 1e-12)))) - LO) / (HI - LO);
+  const X = (v) => pad.l + P(v) * (w - pad.l - pad.r);
+  const Y = (v) => (h - pad.b) - P(v) * (h - pad.t - pad.b);
+  c.strokeStyle = HAIR; c.globalAlpha = .55; c.fillStyle = QUIET; c.font = MONO(9);
+  for (let dd = LO; dd <= HI; dd += 2) {
+    c.beginPath(); c.moveTo(X(10 ** dd), pad.t); c.lineTo(X(10 ** dd), h - pad.b); c.stroke();
+    c.beginPath(); c.moveTo(pad.l, Y(10 ** dd)); c.lineTo(w - pad.r, Y(10 ** dd)); c.stroke();
     c.globalAlpha = 1;
-    c.textAlign = "center"; c.textBaseline = "top"; c.fillText(`1e${d}`, X(10 ** d), h - pad.b + 8);
-    c.textAlign = "right"; c.textBaseline = "middle"; c.fillText(`1e${d}`, pad.l - 7, Y(10 ** d));
+    c.textAlign = "center"; c.textBaseline = "top"; c.fillText(`1e${dd}`, X(10 ** dd), h - pad.b + 8);
+    c.textAlign = "right"; c.textBaseline = "middle"; c.fillText(`1e${dd}`, pad.l - 7, Y(10 ** dd));
     c.globalAlpha = .55;
   }
-  c.globalAlpha = 1;
-  c.strokeStyle = INK; c.globalAlpha = .30; c.setLineDash([4, 4]);
+  c.globalAlpha = .3; c.strokeStyle = INK; c.setLineDash([4, 4]);
   c.beginPath(); c.moveTo(X(10 ** LO), Y(10 ** LO)); c.lineTo(X(10 ** HI), Y(10 ** HI)); c.stroke();
   c.setLineDash([]); c.globalAlpha = 1;
   for (const r of rows) {
-    const fail = r.r > 1e-4;
-    c.fillStyle = fail ? BAD : HAND;
-    c.globalAlpha = fail ? .95 : .5;
-    c.beginPath(); c.arc(X(r.n), Y(r.a), fail ? 3.4 : 2.1, 0, 7); c.fill();
+    const bad = r.r > 1e-4;
+    c.fillStyle = bad ? BAD : HAND; c.globalAlpha = bad ? .95 : .45;
+    c.beginPath(); c.arc(X(r.n), Y(r.a), bad ? 3.4 : 2, 0, 7); c.fill();
   }
-  c.globalAlpha = 1;
-  furniture(c, w, h, pad, "WHAT THE DIFFERENCE QUOTIENT MEASURED", "WHAT I DERIVED");
-  if (done && rows.length) {
-    c.fillStyle = QUIET; c.font = MONO(10, 500);
-    c.textAlign = "right"; c.textBaseline = "bottom";
-    c.fillText("agreement", w - pad.r - 8, Y(10 ** (HI - 0.45)));
-  }
-}
-const w0 = () => $("#scatter").parentElement.clientWidth;
-async function runAudit(draw, stateEl) {
-  const mode = ARCH && !ARCH.full_audit ? PER_TENSOR : 0;
-  const started = await pyJSON(`d.audit_begin(per_tensor=${mode})`);
-  const rows = []; let last;
-  while (true) {
-    last = await pyJSON("d.audit_step(140)");
-    rows.push(...last.rows); bump(last.rows.length * 2);
-    stateEl.textContent = `${last.at} of ${last.total}`;
-    if (draw) draw(rows, false);
-    await yieldPaint();
-    if (last.done) break;
-  }
-  if (draw) draw(rows, true);
-  return { rows, last, started };
-}
-async function auditRun() {
-  if (busy) return;
-  busy = true; $("#auRun").disabled = true;
-  await py.runPythonAsync("d.set_bug('none')");
-  [...$("#bugSeg").querySelectorAll("button")].forEach((x) =>
-    x.classList.toggle("on", x.dataset.v === "none"));
-  curBug = "none"; $("#bugWhat").textContent = "as written";
-  const { rows, last, started } = await runAudit((r, done) => drawScatter(r, done), $("#auState"));
-  AU = rows;
-  const mags = rows.map((r) => Math.abs(r.a)).filter((v) => v > 0);
-  $("#auState").textContent = `${last.total} in ${Math.round(last.ms)} ms`;
-  tiles($("#auTiles"), [
-    ["derivatives", last.total.toLocaleString() + (started.sampled ? " sampled" : "")],
-    ["tensors", "29"],
-    ["worst rel. error", sci(last.worst), last.failing.length ? "no" : "ok"],
-    ["tolerance in ci", sci(last.tolerance, 0)],
-    ["failing", String(last.failing.length), last.failing.length ? "no" : "ok"],
-    ["elapsed", `${Math.round(last.ms)} ms`]]);
-  $("#f2").innerHTML = `${started.sampled
-      ? `<span class="n">${last.total.toLocaleString()}</span> coordinates sampled from
-         <span class="n">${started.scalars.toLocaleString()}</span>`
-      : `All <span class="n">${last.total.toLocaleString()}</span> of them`} in
-    <span class="n">${Math.round(last.ms)} ms</span>, on the batch you gave me, spanning
-    gradients from <span class="n">${sci(Math.min(...mags), 1)}</span> to
-    <span class="n">${sci(Math.max(...mags), 1)}</span>. The worst relative error anywhere in the
-    model is <span class="n">${sci(last.worst)}</span>, a factor of
-    <span class="n">${Math.round(last.tolerance / last.worst).toLocaleString()}</span> inside the
-    <span class="n">${sci(last.tolerance, 0)}</span> CI enforces. Change the tokens above and run
-    it again: the losses move, the gradients move, and the agreement doesn't.`;
-  busy = false; $("#auRun").disabled = false;
-}
-
-/* ---------------- 03 break it ---------------- */
-let BUGS = [], curBug = "none", lastWorst = 0;
-function paintBoard(per, failing) {
-  if (!per) {
-    $("#board").innerHTML =
-      `<div class="lamp"><em>29 tensors, unlit</em><i>re-audit to light them</i></div>`;
-    return;
-  }
-  const bad = new Set(failing);
-  $("#board").innerHTML = per.map((t) => {
-    const no = bad.has(t.name);
-    return `<div class="lamp ${no ? "no" : "ok"}"><em title="${esc(t.name)}">${esc(t.name)}</em>
-      <i>${no ? "off by " + sci(t.worst, 1) : "ok"}</i></div>`;
-  }).join("");
-}
-async function bugAudit() {
-  if (busy) return;
-  busy = true; $("#bgAudit").disabled = true; $("#bgTrain").disabled = true;
-  await py.runPythonAsync(`d.set_bug(${JSON.stringify(curBug)})`);
-  const { last } = await runAudit(null, $("#bgState"));
-  paintBoard(last.per_tensor, last.failing);
-  lastWorst = last.worst;
-  $("#bgState").textContent = `${last.total} in ${Math.round(last.ms)} ms`;
-  const nOk = 29 - last.failing.length;
-  tiles($("#bgTiles"), [
-    ["derivation", curBug === "none" ? "as written" : "broken"],
-    ["tensors clean", `${nOk} of 29`, last.failing.length ? "" : "ok"],
-    ["tensors wrong", `${last.failing.length} of 29`, last.failing.length ? "no" : "ok"],
-    ["worst rel. error", sci(last.worst), last.worst > last.tolerance ? "no" : "ok"]]);
-  $("#f3").innerHTML = curBug === "none"
-    ? `The derivation as I wrote it: <span class="n good">0</span> of 29 tensors wrong, worst
-       relative error <span class="n">${sci(last.worst)}</span>. Now break one.`
-    : `<span class="n bad">${last.failing.length}</span> of 29 tensors are now wrong, the worst
-       coordinate off by a factor of <span class="n">${Math.round(last.worst).toLocaleString()}</span>.
-       Look at which ones stayed clean: a parameter whose gradient never passes through the op I
-       broke is still exactly right, so the pattern of failures points at where the mistake is.
-       That is the part a single scalar summary would have hidden. Now train with it in.`;
-  busy = false; $("#bgAudit").disabled = false;
-  $("#bgTrain").disabled = curBug === "none";
-}
-function drawCmp(pair) {
-  const { c, w, h } = ctx($("#cmp"), 260);
-  const pad = { l: 54, r: 20, t: 26, b: 40 };
-  if (!pair) {
-    c.fillStyle = QUIET; c.font = MONO(11, 500); c.textAlign = "center";
-    c.textBaseline = "middle";
-    c.fillText("TRAIN BOTH WAYS TO DRAW THIS", w / 2, h / 2); return;
-  }
-  const all = pair.true.losses.concat(pair.bug.losses);
-  const top = Math.max(...all), bot = Math.max(Math.min(...all) * .8, 1e-4);
-  const Y = (v) => pad.t + ((Math.log10(Math.max(v, bot)) - Math.log10(top)) /
-    (Math.log10(bot) - Math.log10(top))) * (h - pad.t - pad.b);
-  const X = (i, n) => pad.l + (i / Math.max(1, n - 1)) * (w - pad.l - pad.r);
-  c.strokeStyle = HAIR; c.globalAlpha = .6; c.fillStyle = QUIET; c.font = MONO(9);
+  c.globalAlpha = 1; c.fillStyle = QUIET; c.font = MONO(9.5, 500);
   c.textAlign = "right"; c.textBaseline = "middle";
-  for (const g of [1, .1, .01, .001]) {
-    if (g > top || g < bot) continue;
-    c.beginPath(); c.moveTo(pad.l, Y(g)); c.lineTo(w - pad.r, Y(g)); c.stroke();
-    c.globalAlpha = 1; c.fillText(String(g), pad.l - 7, Y(g)); c.globalAlpha = .6;
-  }
-  c.globalAlpha = 1;
-  for (const [key, col, wid, al] of [["true", HAND, 4.2, .38], ["bug", BAD, 1.5, 1]]) {
-    const L = pair[key].losses;
-    c.strokeStyle = col; c.lineWidth = wid; c.globalAlpha = al;
-    c.beginPath();
-    L.forEach((v, i) => (i ? c.lineTo(X(i, L.length), Y(v)) : c.moveTo(X(i, L.length), Y(v))));
-    c.stroke();
-  }
-  c.globalAlpha = 1;
-  c.font = MONO(9.5, 500); c.textAlign = "right"; c.textBaseline = "middle";
-  c.fillStyle = HAND; c.fillText("MY DERIVATION", w - pad.r, pad.t - 13);
-  c.fillStyle = BAD; c.fillText("THE BROKEN ONE", w - pad.r - 118, pad.t - 13);
-  furniture(c, w, h, pad, "STEP", "");
+  c.fillText("WHAT THE DIFFERENCE QUOTIENT MEASURED", w - pad.r, h - pad.b + 26);
+  c.textAlign = "left"; c.fillText("WHAT I DERIVED", pad.l, pad.t - 12);
 }
-async function bugTrain() {
-  if (busy || curBug === "none") return;
-  busy = true; $("#bgTrain").disabled = true;
-  $("#bgState").textContent = "training twice, 400 steps each";
-  const pair = await pyJSON(`d.train_pair(${JSON.stringify(curBug)}, steps=400)`);
-  bump(800); drawCmp(pair);
-  const cm = pair.compare;
-  const a = pair.true.losses[pair.true.losses.length - 1];
-  const b = pair.bug.losses[pair.bug.losses.length - 1];
-  $("#bgState").textContent = "done";
-  // Whether training notices depends on the bug, so say what happened rather
-  // than asserting it never notices.
-  const ratio = b / a, hid = ratio < 3;
-  $("#f3").innerHTML = `That derivative is wrong by a factor of
-    <span class="n">${Math.round(lastWorst).toLocaleString()}</span> on its worst coordinate, and
-    across all <span class="n">${(ARCH ? ARCH.params : 1312).toLocaleString()}</span> of them the
-    wrong gradient sits <span class="n">${cm.degrees.toFixed(1)}&deg;</span> from the right one, a
-    cosine of <span class="n">${cm.cosine.toFixed(4)}</span>, because the error is spread thinly
-    over a lot of numbers.
-    ${hid
-      ? `Training does not notice. After 400 steps the loss is
-         <span class="h n">${a.toFixed(4)}</span> correct against
-         <span class="bad n">${b.toFixed(4)}</span> broken, the curves lie on top of each other,
-         and the broken model still continues the sequence with
-         <span class="n">${pair.bug.sample.continuation.join(" ")}</span>. Adam normalises per
-         coordinate and walks downhill on a gradient that points roughly the right way.`
-      : `This one training does notice: <span class="h n">${a.toFixed(4)}</span> correct against
-         <span class="bad n">${b.toFixed(4)}</span> broken, and it continues the sequence with
-         <span class="n">${pair.bug.sample.continuation.join(" ")}</span>.`}
-    Try the others. Some wrong derivations wreck the loss curve and some are invisible in it, which
-    is the problem: you cannot tell which kind you have by looking at the curve. The audit does not
-    depend on which kind it is.`;
-  busy = false; $("#bgTrain").disabled = false;
-}
-
-/* ---------------- 04 the V ---------------- */
-const EPSES = [1e-1, 1e-2, 1e-3, 1e-4, 3e-5, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9];
-function drawV(pts) {
-  const { c, w, h } = ctx($("#vcurve"), 320);
-  const pad = { l: 58, r: 20, t: 28, b: 46 };
-  const XLO = -9.5, XHI = -.5, YLO = -11, YHI = -2;
-  const X = (e) => pad.l + ((Math.log10(e) - XLO) / (XHI - XLO)) * (w - pad.l - pad.r);
-  const Y = (v) => (h - pad.b) - ((Math.log10(Math.max(v, 1e-11)) - YLO) / (YHI - YLO)) * (h - pad.t - pad.b);
-  c.strokeStyle = HAIR; c.globalAlpha = .6; c.fillStyle = QUIET; c.font = MONO(9);
-  for (let d = -9; d <= -1; d += 2) {
-    c.beginPath(); c.moveTo(X(10 ** d), pad.t); c.lineTo(X(10 ** d), h - pad.b); c.stroke();
-    c.globalAlpha = 1; c.textAlign = "center"; c.textBaseline = "top";
-    c.fillText(`1e${d}`, X(10 ** d), h - pad.b + 8); c.globalAlpha = .6;
-  }
-  for (let d = -11; d <= -3; d += 2) {
-    c.beginPath(); c.moveTo(pad.l, Y(10 ** d)); c.lineTo(w - pad.r, Y(10 ** d)); c.stroke();
-    c.globalAlpha = 1; c.textAlign = "right"; c.textBaseline = "middle";
-    c.fillText(`1e${d}`, pad.l - 7, Y(10 ** d)); c.globalAlpha = .6;
-  }
-  c.globalAlpha = 1;
-  if (!pts.length) {
-    c.fillStyle = QUIET; c.font = MONO(11, 500); c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillText("SWEEP TO DRAW THIS", w / 2, h / 2);
-  }
-  if (pts.length > 1) {
-    const s = pts.slice().sort((a, b) => a.eps - b.eps);
-    c.strokeStyle = HAND; c.lineWidth = 1.8; c.beginPath();
-    s.forEach((p, i) => (i ? c.lineTo(X(p.eps), Y(p.median)) : c.moveTo(X(p.eps), Y(p.median))));
-    c.stroke();
-  }
-  let best = null;
-  for (const p of pts) if (!best || p.median < best.median) best = p;
-  for (const p of pts) {
-    c.fillStyle = p === best ? OK : HAND;
-    c.beginPath(); c.arc(X(p.eps), Y(p.median), p === best ? 4.6 : 2.8, 0, 7); c.fill();
-  }
-  if (best && pts.length > 2) {
-    c.fillStyle = OK; c.font = MONO(10, 500); c.textAlign = "center"; c.textBaseline = "bottom";
-    c.fillText(`eps = ${sci(best.eps, 0)}`, X(best.eps), Y(best.median) - 11);
-  }
-  if (pts.length > 4) {
-    c.fillStyle = QUIET; c.font = MONO(9.5, 500);
-    c.textAlign = "left"; c.textBaseline = "middle";
-    c.fillText("TRUNCATION, LIKE EPS^2", X(2e-2), Y(2e-6));
-    c.textAlign = "right"; c.fillText("CANCELLATION, LIKE ETA/EPS", X(2e-9), Y(2e-6));
-  }
-  furniture(c, w, h, pad, "STEP SIZE EPSILON", "MEDIAN RELATIVE ERROR");
-}
-async function epsRun() {
-  if (busy) return;
-  busy = true; $("#epRun").disabled = true;
+async function checkGrads(bug) {
+  if (busy || !trained) { if (!trained) $("#gState2").textContent = "train it first"; return; }
+  busy = true; $("#gRun").disabled = true; $("#bRun").disabled = true;
+  $("#gState2").textContent = bug ? "checking, with a term removed" : "checking";
+  await py.runPythonAsync(`d.set_bug(${q(bug || "none")})`);
+  const g = await pyJSON("d.gpt_audit_sample(per_tensor=30)");
   await py.runPythonAsync("d.set_bug('none')");
-  const pts = [];
-  for (const e of EPSES) {
-    const p = await pyJSON(`d.eps_point(${e})`);
-    pts.push(p); VPTS = pts; bump(p.n * 2);
-    $("#epState").textContent = `eps = ${sci(e, 0)}`;
-    drawV(pts); await yieldPaint();
-  }
-  let best = pts[0];
-  for (const p of pts) if (p.median < best.median) best = p;
-  $("#epState").textContent = "done";
-  tiles($("#epTiles"), [
-    ["best epsilon", sci(best.eps, 0), "ok"],
-    ["median error there", sci(best.median)],
-    ["at eps = 1e-1", sci(pts[0].median)],
-    ["at eps = 1e-9", sci(pts[pts.length - 1].median)],
-    ["coordinates sampled", String(best.n)]]);
-  $("#f4").innerHTML = `The floor sits at <span class="n good">&epsilon; = ${sci(best.eps, 0)}</span>
-    with a median relative error of <span class="n">${sci(best.median)}</span>. Ten times larger and
-    truncation dominates at <span class="n">${sci(pts[Math.max(0, EPSES.indexOf(best.eps) - 1)].median)}</span>;
-    keep shrinking and the two losses agree in so many digits that the subtraction throws the
-    answer away, reaching <span class="n">${sci(pts[pts.length - 1].median)}</span> at
-    <span class="n">1e-9</span>. Both walls are visible above, which is why the audit uses
-    <span class="n">1e-5</span> rather than the smallest step it could.`;
-  busy = false; $("#epRun").disabled = false;
+  bump(g.checked * 2); drawScatter(g.rows);
+  tiles($("#gTiles"), [
+    ["weights checked", g.checked.toLocaleString()],
+    ["out of", g.scalars.toLocaleString()],
+    ["worst relative error", sci(g.worst), g.failing.length ? "no" : "ok"],
+    ["tolerance", sci(g.tolerance, 0)],
+    ["tensors wrong", `${g.failing.length} of ${ARCH.tensors}`, g.failing.length ? "no" : "ok"],
+    ["elapsed", `${Math.round(g.ms)} ms`]]);
+  $("#gState2").textContent = `${g.checked} checked in ${Math.round(g.ms)} ms`;
+  $("#f4").innerHTML = bug
+    ? `I removed one term from the gradient of LayerNorm, the piece that accounts for the
+       variance depending on every coordinate. <span class="n bad">${g.failing.length}</span> of
+       <span class="n">${ARCH.tensors}</span> tensors are now wrong, the worst by a factor of
+       <span class="n">${Math.round(g.worst).toLocaleString()}</span>. Nothing about the forward
+       pass changed, so the model would still have trained; it would just have been walking
+       downhill in slightly the wrong direction, and no loss curve would have told you. That is
+       what this check is for, and why I wrote it before I wrote anything else.`
+    : `<span class="n good">${g.checked.toLocaleString()}</span> weights sampled from
+       <span class="n">${g.scalars.toLocaleString()}</span>, on the model that just wrote your
+       text, and every one of them agrees. Worst relative error
+       <span class="n">${sci(g.worst)}</span> against the
+       <span class="n">${sci(g.tolerance, 0)}</span> CI enforces. The horizontal axis is
+       arithmetic, the vertical is calculus I did on paper, and they share no code. Now break
+       one and watch this go red.`;
+  busy = false; $("#gRun").disabled = false; $("#bRun").disabled = false;
 }
 
-/* ---------------- 05 position ---------------- */
-function drawPos(p) {
-  const { c, w, h } = ctx($("#pos"), 270);
-  const pad = { l: 56, r: 20, t: 30, b: 42 };
-  if (!p) {
-    c.fillStyle = QUIET; c.font = MONO(11, 500); c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillText("RUN IT TO DRAW THIS", w / 2, h / 2); return;
-  }
-  const n = p.positions.length, bw = (w - pad.l - pad.r) / n;
-  const base = h - pad.b, full = h - pad.t - pad.b;
-  c.strokeStyle = HAIR; c.globalAlpha = .6; c.beginPath();
-  c.moveTo(pad.l, base); c.lineTo(w - pad.r, base); c.stroke(); c.globalAlpha = 1;
-  p.positions.forEach((pos, i) => {
-    const x = pad.l + i * bw;
-    if (pos > p.window) {
-      c.fillStyle = INK; c.globalAlpha = .035;
-      c.fillRect(x, pad.t, bw, full); c.globalAlpha = 1;
-    }
-    [["fixed", MEAS, 0], ["random", HAND, bw * .48]].forEach(([key, col, off]) => {
-      const ok = p[key][i] > .5;
-      c.fillStyle = ok ? col : BAD; c.globalAlpha = ok ? .85 : 1;
-      const hgt = ok ? full : Math.max(3, full * .045);
-      c.fillRect(x + off + 2, base - hgt, bw * .44 - 3, hgt);
-    });
-    c.globalAlpha = 1;
-    c.fillStyle = QUIET; c.font = MONO(9); c.textAlign = "center"; c.textBaseline = "top";
-    c.fillText(String(pos), x + bw / 2, base + 8);
-  });
-  const cut = pad.l + p.window * bw;
-  c.strokeStyle = INK; c.globalAlpha = .35; c.setLineDash([3, 3]);
-  c.beginPath(); c.moveTo(cut, pad.t); c.lineTo(cut, base); c.stroke();
-  c.setLineDash([]); c.globalAlpha = 1;
-  c.fillStyle = QUIET; c.font = MONO(9.5, 500); c.textAlign = "left"; c.textBaseline = "top";
-  c.fillText("PAST THE TRAINING WINDOW", cut + 7, pad.t + 1);
-  c.textAlign = "right"; c.textBaseline = "middle";
-  c.fillStyle = MEAS; c.fillText("ONE PHASE ONLY", w - pad.r, pad.t - 14);
-  c.fillStyle = HAND; c.fillText("EVERY PHASE", w - pad.r - 104, pad.t - 14);
-  furniture(c, w, h, pad, "POSITION", "");
-}
-async function posRun() {
-  if (busy) return;
-  busy = true; $("#poRun").disabled = true;
-  $("#poState").textContent = "training two models";
-  await py.runPythonAsync("d.set_bug('none')");
-  const p = await pyJSON(`d.positional(steps=${poSteps})`);
-  bump(1600); POS = p; drawPos(p);
-  let firstFail = null;
-  p.positions.forEach((pos, i) => { if (firstFail === null && p.fixed[i] < .5) firstFail = pos; });
-  const fixOk = p.fixed.filter((x) => x > .5).length;
-  const ranOk = p.random.filter((x) => x > .5).length;
-  const per = p.period.length, win = p.window;
-  $("#poState").textContent = "done";
-  $("#f5").innerHTML = firstFail === null
-    ? `Nothing failed. Your period is <span class="n">${per}</span> tokens and the context window
-       holds <span class="n">${win}</span>, so every window the model will ever see at test time
-       is one it already saw in training, whatever phase it started at. There is no phase left to
-       generalise to. Both models score <span class="n good">${fixOk}</span> of
-       <span class="n">${p.positions.length}</span>. Make the period longer than
-       <span class="n">${win}</span> and the cliff comes back.`
-    : `The one-phase model is exact through position
-       <span class="n">${firstFail - 1}</span> and wrong at
-       <span class="n bad">${firstFail}</span>, the first prediction whose context window has slid
-       to a phase it never saw. It scores <span class="n">${fixOk}</span> of
-       <span class="n">${p.positions.length}</span>. The model trained on every phase scores
-       <span class="n good">${ranOk}</span>. Same architecture, same steps, the same hand-derived
-       gradients, and both fit their training data. The only difference is what was in the
-       batches, which is a fact about the data rather than about the model or its calculus.`;
-  busy = false; $("#poRun").disabled = false;
-}
-
-/* ---------------- 06 train ---------------- */
-let TR = { losses: [], step: 0, trained: false }, curSeed = 0, curLr = 5e-3;
-function drawLoss() {
-  const { c, w, h } = ctx($("#loss"), 270);
-  const pad = { l: 54, r: 20, t: 26, b: 40 };
-  const L = TR.losses;
-  if (!L.length) {
-    c.fillStyle = QUIET; c.font = MONO(11, 500); c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillText("TRAIN TO DRAW THIS", w / 2, h / 2);
-    furniture(c, w, h, pad, "STEP", "CROSS-ENTROPY"); return;
-  }
-  const top = Math.max(...L), bot = Math.max(Math.min(...L) * .8, 1e-4);
-  const Y = (v) => pad.t + ((Math.log10(Math.max(v, bot)) - Math.log10(top)) /
-    (Math.log10(bot) - Math.log10(top))) * (h - pad.t - pad.b);
-  const X = (i) => pad.l + (i / 399) * (w - pad.l - pad.r);
-  c.strokeStyle = HAIR; c.globalAlpha = .6; c.fillStyle = QUIET; c.font = MONO(9);
-  c.textAlign = "right"; c.textBaseline = "middle";
-  for (const g of [1, .1, .01, .001]) {
-    if (g > top || g < bot) continue;
-    c.beginPath(); c.moveTo(pad.l, Y(g)); c.lineTo(w - pad.r, Y(g)); c.stroke();
-    c.globalAlpha = 1; c.fillText(String(g), pad.l - 7, Y(g)); c.globalAlpha = .6;
-  }
-  c.globalAlpha = 1;
-  c.strokeStyle = HAND; c.lineWidth = 1.8; c.beginPath();
-  L.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v))));
-  c.stroke();
-  furniture(c, w, h, pad, "STEP", "CROSS-ENTROPY");
-}
-async function trainRun() {
-  if (busy) return;
-  busy = true; $("#trRun").disabled = true; $("#trGo").disabled = true;
-  TR = { losses: [], step: 0, trained: false };
-  await py.runPythonAsync("d.set_bug('none')");
-  await pyJSON(`d.train_begin(lr=${curLr}, seed=${curSeed})`);
-  while (TR.step < 400) {
-    const r = await pyJSON("d.train_step(25)");
-    TR.losses.push(...r.losses); TR.step = r.step; bump(25);
-    $("#trState").textContent = `step ${r.step} of 400`;
-    tiles($("#trTiles"), [
-      ["step", r.step], ["loss", r.last.toFixed(4)],
-      ["parameters", "1,312"], ["seed", String(curSeed)],
-      ["learning rate", sci(curLr, 0)]]);
-    drawLoss(); await yieldPaint();
-  }
-  TR.trained = true;
-  $("#trState").textContent = "trained, now generate";
-  $("#f6").innerHTML = `Four hundred steps at seed <span class="n">${curSeed}</span>, from
-    <span class="n">${TR.losses[0].toFixed(3)}</span> down to
-    <span class="n">${TR.losses[TR.losses.length - 1].toFixed(4)}</span>. Every gradient in those
-    400 steps came out of NumPy I wrote by hand, and every one of them was audited above. Type a
-    prompt and see what it does with it.`;
-  busy = false; $("#trRun").disabled = false; $("#trGo").disabled = false;
-}
-async function generate() {
-  if (busy || !TR.trained) return;
-  let toks;
-  try {
-    toks = $("#pIn").value.split(/[\s,]+/).filter(Boolean).map(Number);
-    if (!toks.length) throw new Error("type some ids");
-    for (const t of toks) {
-      if (!Number.isInteger(t) || t < 0 || t > 6) throw new Error("ids must be whole numbers 0 to 6");
-    }
-    if (toks.length > 6) throw new Error("at most 6 ids, the context window");
-  } catch (err) {
-    $("#pEntry").classList.add("bad"); $("#pWhy").classList.add("bad");
-    $("#pWhy").textContent = err.message; return;
-  }
-  $("#pEntry").classList.remove("bad"); $("#pWhy").classList.remove("bad");
-  busy = true; $("#trGo").disabled = true;
-  const g = await pyJSON(`d.train_sample(prompt=${JSON.stringify(toks)}, temperature=${curTemp})`);
-  bump(7);
-  $("#pWhat").textContent = toks.join(" ");
-  $("#pWhy").textContent = `continued with ${g.continuation.join(" ")}`;
-  // what continues the sequence depends on the last token, so the driver
-  // decides; 0 and 6 never appear in training and have no right answer
-  $("#f6").innerHTML = `Prompted with <span class="n">${toks.join(" ")}</span> it continues
-    <span class="n">${g.continuation.join(" ")}</span>, greedily and with no sampling.
-    ${!g.in_period
-      ? `Your prompt ends on a token the training sequence never contains, so there is no correct
-         continuation to compare against. What it does instead is the model extrapolating, and
-         worth a look.`
-      : (g.correct
-        ? `That is the period-5 sequence carried on correctly from the phase you started it at,
-           and it was never shown a prompt of that length.`
-        : `From that phase the sequence runs <span class="n">${g.expected.join(" ")}</span>, so it
-           got this one wrong.`)}`;
-  busy = false; $("#trGo").disabled = false;
-}
-
-/* ---------------- boot ---------------- */
+/* ---- boot ---- */
 async function boot() {
   $("#boot").textContent = "loading python";
   py = await loadPyodide();
   $("#boot").textContent = "loading numpy";
   await py.loadPackage("numpy");
-  $("#boot").textContent = "unpacking tfs";
-  // The page and the engine it runs are separate files, and a visitor holding a
-  // cached bundle from a previous deploy alongside fresh HTML gets an ImportError
-  // from deep inside Pyodide with nothing pointing at the cause. One always-fresh
-  // file names both, and each is fetched at a URL that moves when its bytes do.
+  $("#boot").textContent = "unpacking";
   const fresh = { cache: "no-store" };
   const stamp = await (await fetch("bundle.json", fresh)).json();
   py.unpackArchive(await (await fetch(`tfs-pkg.zip?v=${stamp.sha}`, fresh)).arrayBuffer(), "zip");
   py.FS.writeFile("tfsdemo.py", await (await fetch(`tfsdemo.py?v=${stamp.driver}`, fresh)).text());
   await py.runPythonAsync("import sys; sys.path.insert(0,'.')\nimport tfsdemo as d");
-
-  ARCH = await pyJSON("d.arch_info()");
-  seg($("#dSeg"), [8, 16, 24, 32].map((d) => ({ v: d, t: String(d) })), 8,
-    (v) => applyArch({ d_model: +v }));
-  seg($("#nSeg"), [1, 2, 3, 4].map((n) => ({ v: n, t: String(n) })), 2,
-    (v) => applyArch({ n_blocks: +v }));
-  seg($("#fSeg"), [16, 32, 64].map((f) => ({ v: f, t: String(f) })), 16,
-    (v) => applyArch({ d_ff: +v }));
-  // the tensor list and its gradient shading come from applyArch below, which
-  // sets the batch first
-  let eTimer = null;
-  $("#eSl").addEventListener("input", (e) => {
-    curEps = Math.pow(10, Number(e.target.value));
-    $("#eVal").textContent = sci(curEps, 1);
-    clearTimeout(eTimer);
-    eTimer = setTimeout(() => { if (!busy) measure(curI); }, 200);
-  });
-  BUGS = await pyJSON("d.bug_list()");
-  seg($("#bugSeg"), BUGS.map((b) => ({
-    v: b.key, warn: b.key !== "none",
-    t: b.key === "none" ? "as written" : b.label.replace(" backward,", ":").replace(" term dropped", ""),
-  })), "none", (v) => {
-    curBug = v;
-    $("#bugWhat").textContent = (BUGS.find((b) => b.key === v) || {}).label || v;
-    paintBoard(null); tiles($("#bgTiles"), []); drawCmp(null);
-    $("#bgState").textContent = "audit not run"; $("#bgTrain").disabled = true;
-    $("#f3").innerHTML = v === "none"
-      ? `Back to the derivation as I wrote it. Re-audit to confirm.`
-      : `Re-audit and watch which of the 29 tensors go wrong.`;
-  });
-  seg($("#poSeg"), [100, 400, 900].map((n) => ({ v: n, t: String(n) })), 400,
-    (v) => { poSteps = Number(v); $("#poStepsV").textContent = v;
-             POS = null; drawPos(null); $("#poState").textContent = "not run"; });
-  seg($("#tempSeg"), [0, 0.4, 0.9].map((t) => ({ v: t, t: t.toFixed(1) })), 0,
-    (v) => { curTemp = Number(v); $("#tVal").textContent = curTemp.toFixed(1); });
-  seg($("#sSeg"), [0, 1, 2, 3].map((s) => ({ v: s, t: String(s) })), 0,
-    (v) => { curSeed = Number(v); $("#sVal").textContent = v; });
-  seg($("#lSeg"), [1e-3, 5e-3, 2e-2].map((l) => ({ v: l, t: sci(l, 0) })), 5e-3,
-    (v) => { curLr = Number(v); $("#lVal").textContent = sci(curLr, 0); });
-
-  await applyArch({});
-  paintCells(); paintBoard(null);
-  drawScatter([], false); drawCmp(null); drawV([]); drawPos(null); drawLoss();
+  $("#corpus").value = await py.runPythonAsync("d.DEFAULT_TEXT.strip()");
+  await applyCorpus();
+  seg($("#dSeg"), [24, 32, 48, 64].map((v) => ({ v, t: String(v) })), 48,
+    (v) => { CFG.d = +v; $("#dV").textContent = v; });
+  seg($("#ctxSeg"), [16, 32, 48].map((v) => ({ v, t: String(v) })), 32,
+    (v) => { CFG.ctx = +v; $("#cV").textContent = v; });
+  seg($("#bSeg"), [1, 2, 3].map((v) => ({ v, t: String(v) })), 2,
+    (v) => { CFG.blocks = +v; $("#bV").textContent = v; });
+  seg($("#sSeg"), [300, 600, 1200].map((v) => ({ v, t: String(v) })), 600,
+    (v) => { CFG.steps = +v; $("#sV").textContent = v; });
+  seg($("#nSeg"), [80, 160, 320].map((v) => ({ v, t: String(v) })), 160,
+    (v) => { NGEN = +v; $("#nV").textContent = v; });
+  drawLoss(); drawScatter([]);
   $("#boot").textContent = "ready";
-  $("#bgTrain").disabled = true; $("#trGo").disabled = true;
 }
 
-$("#cells").addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-i]");
-  if (b) measure(Number(b.dataset.i));
+$("#run").addEventListener("click", train);
+$("#reset").addEventListener("click", () => {
+  LOSSES = []; trained = false; drawLoss();
+  $("#live").innerHTML = `<span class="seed">press train</span>`;
+  $("#gen").innerHTML = `<span class="seed">train it first</span>`;
+  $("#heads").innerHTML = ""; tiles($("#tTiles"), []); tiles($("#gTiles"), []);
+  $("#dist").innerHTML = ""; drawScatter([]);
+  $("#tState").textContent = "not trained"; $("#gState2").textContent = "not run";
 });
-let bTimer = null;
-$("#bIn").addEventListener("input", () => {
-  clearTimeout(bTimer);
-  bTimer = setTimeout(() => { if (!busy) applyBatch(); }, 420);
+let cT = null;
+$("#corpus").addEventListener("input", () => {
+  clearTimeout(cT); cT = setTimeout(() => { if (!busy) applyCorpus(); }, 400);
 });
-let pdTimer = null;
-$("#pdIn").addEventListener("input", () => {
-  clearTimeout(pdTimer);
-  pdTimer = setTimeout(async () => {
-    if (busy) return;
-    let toks;
-    try {
-      toks = $("#pdIn").value.split(/[\s,]+/).filter(Boolean).map(Number);
-      if (toks.length < 2 || toks.length > 8) throw new Error("2 to 8 tokens");
-      for (const t of toks) {
-        if (!Number.isInteger(t) || t < 0 || t > 6) throw new Error("ids 0 to 6");
-      }
-    } catch (err) {
-      $("#pdEntry").classList.add("bad"); $("#pdWhy").classList.add("bad");
-      $("#pdWhy").textContent = err.message; return;
-    }
-    $("#pdEntry").classList.remove("bad"); $("#pdWhy").classList.remove("bad");
-    const r = await pyJSON(`d.set_period(${JSON.stringify(toks)})`);
-    $("#pdWhat").textContent = toks.join(" ");
-    $("#pdWhy").textContent = r.length <= r.window
-      ? `period ${r.length}, which fits inside the ${r.window}-token window`
-      : `period ${r.length}, longer than the ${r.window}-token window`;
-    POS = null; drawPos(null); $("#poState").textContent = "not run";
-    TR = { losses: [], step: 0, trained: false };
-    $("#trGo").disabled = true; $("#trState").textContent = "not trained";
-    drawLoss();
-  }, 420);
+let pT = null;
+$("#prompt").addEventListener("input", () => {
+  clearTimeout(pT); pT = setTimeout(distribution, 220);
 });
-$("#auRun").addEventListener("click", auditRun);
-$("#bgAudit").addEventListener("click", bugAudit);
-$("#bgTrain").addEventListener("click", bugTrain);
-$("#epRun").addEventListener("click", epsRun);
-$("#poRun").addEventListener("click", posRun);
-$("#trRun").addEventListener("click", trainRun);
-$("#trGo").addEventListener("click", generate);
-$("#pIn").addEventListener("keydown", (e) => { if (e.key === "Enter") generate(); });
+$("#prompt").addEventListener("keydown", (e) => { if (e.key === "Enter") write(); });
+$("#go").addEventListener("click", write);
+$("#temp").addEventListener("input", (e) => {
+  TEMP = Number(e.target.value); $("#tempV").textContent = TEMP.toFixed(1);
+});
+$("#aRun").addEventListener("click", drawHeads);
+$("#gRun").addEventListener("click", () => checkGrads(null));
+$("#bRun").addEventListener("click", () => checkGrads("ln_cov"));
 
 const links = [...document.querySelectorAll("nav a")];
 const io = new IntersectionObserver((es) => {
@@ -1264,12 +740,9 @@ const io = new IntersectionObserver((es) => {
 }, { rootMargin: "-40% 0px -55% 0px" });
 document.querySelectorAll(".open[id]").forEach((s) => io.observe(s));
 addEventListener("scroll", () => {
-  const max = document.body.scrollHeight - innerHeight;
-  $("#prog").style.width = (max > 0 ? (scrollY / max) * 100 : 0) + "%";
+  const mx = document.body.scrollHeight - innerHeight;
+  $("#prog").style.width = (mx > 0 ? (scrollY / mx) * 100 : 0) + "%";
 }, { passive: true });
-addEventListener("resize", () => {
-  drawLoss(); drawV(VPTS); drawPos(POS);
-  drawScatter(AU || [], !!AU);
-});
+addEventListener("resize", () => { drawLoss(); if (trained) drawHeads(); });
 boot().catch((e) => { $("#boot").textContent = "failed: " + e.message; throw e; });
 </script>
