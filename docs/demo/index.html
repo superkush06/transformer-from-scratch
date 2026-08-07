@@ -12,7 +12,7 @@
 <meta name="twitter:description" content="Paste text, watch it learn, then audit every gradient." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300..600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
 <style>
   :root {
@@ -38,8 +38,11 @@
   .m { font-family: "IBM Plex Mono", Menlo, monospace; text-transform: uppercase;
        letter-spacing: .085em; font-size: .69rem; font-weight: 500; color: var(--quiet) }
 
-  header { padding: 6rem 0 0 }
+  header { padding: 6rem 0 0; position: relative }
   header .m { display: block; margin-bottom: 1.6rem }
+  header h1 { font-size: clamp(2.15rem, 5.9vw, 4.3rem); line-height: 1.04;
+              letter-spacing: -.026em; text-wrap: balance }
+  header .dek { font-size: clamp(1.15rem, 2.1vw, 1.6rem); max-width: 34rem }
   h1 { font-size: 3.05rem; font-weight: 400; line-height: 1.06; letter-spacing: -.021em;
        margin: 0; font-optical-sizing: auto }
   .dek { font-size: 1.4rem; line-height: 1.45; font-weight: 300; color: #5E594F;
@@ -399,9 +402,9 @@
 <div class="text">
   <p>The package is
     <a href="https://github.com/superkush06/transformer-from-scratch">transformer-from-scratch</a>,
-    about 600 lines of NumPy with no runtime dependencies. There is a
+    about 600 lines of NumPy with no runtime dependencies. There's a
     <a href="https://colab.research.google.com/github/superkush06/transformer-from-scratch/blob/main/notebooks/audit.ipynb">notebook</a>
-    that does the checks a browser cannot, including diffing every gradient against PyTorch's
+    that does the checks a browser can't, including diffing every gradient against PyTorch's
     autograd, where the two agree to about <span class="n">1e-15</span>.</p>
   <footer>
     <span class="n" id="runs">0</span> forward and backward passes ran in this tab while you
