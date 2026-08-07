@@ -3,16 +3,39 @@
 [![ci](https://github.com/superkush06/transformer-from-scratch/actions/workflows/ci.yml/badge.svg)](https://github.com/superkush06/transformer-from-scratch/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A decoder-only GPT in NumPy with no autograd. Every backward pass —
-attention, LayerNorm, GELU, cross-entropy — was derived by hand and
-written out as explicit NumPy. There is no tape and no `.backward()`.
+A detailed record of experiments and visualisations on a GPT whose every
+gradient I derived by hand, with the code that produced them.
+
+### ▶ Run it in your browser: [**superkush06.github.io/transformer-from-scratch/demo**](https://superkush06.github.io/transformer-from-scratch/demo/)
+
+| | | |
+|---|---|---|
+| **01** | One derivative | pick any weight, watch it measured against the definition |
+| **02** | All 1,312 | the whole audit, on tokens you type |
+| **03** | Break it | drop a term from a backward pass and see who notices |
+| **04** | Epsilon | why the step is 1e-5 and not smaller |
+| **05** | Position | exact until the context window slides |
+| **06** | Train it | 400 steps, then a prompt of your choosing |
+
+Nothing there is precomputed. The page runs this package under Pyodide, so
+every figure is the library answering in your tab, and the batch it audits is
+whichever tokens you give it.
+
+A decoder-only GPT in NumPy with no autograd. Every backward pass, covering
+attention, LayerNorm, GELU and cross-entropy, was derived by hand and written
+out as explicit NumPy. There is no tape and no `.backward()`.
 
 Hand-derived gradients are easy to get subtly wrong, so most of the work
-here is the evidence that these ones are right: 1,312 hand-computed
-partial derivatives, each checked against a central difference.
+here is the evidence that these ones are right: 1,312 gradient checks —
+one hand-computed partial derivative against one central difference, for
+every scalar of every parameter in a 2-block model.
 `examples/gradcheck.py` sweeps all 1,312 in about half a second. CI
 checks all 29 parameter tensors on every push, sampling coordinates
 inside the large ones so that test stays under a second.
+
+1,312 counts derivatives, not tests. The suite is 99 tests, and the
+sampled gradient check is one of them. `tests/test_metadata.py` collects
+the suite and fails if that number ever stops matching.
 
 ![hand-derived gradients against central differences](docs/gradcheck.png)
 
@@ -37,11 +60,16 @@ the idealisation sets to 1.
 git clone https://github.com/superkush06/transformer-from-scratch.git
 cd transformer-from-scratch
 pip install -e ".[dev]"
-pytest                                        # 80 tests, ~10 s
+pytest                                        # 99 tests, ~9 s
 ```
 
 NumPy is the only runtime dependency. The `dev` extra adds pytest, ruff
 and matplotlib; matplotlib is needed only to redraw the figures.
+
+`make check` runs the same lint and suite CI runs; CI runs them on Linux
+and macOS across 3.11 and 3.12, because reduction order is not part of
+NumPy's API and several numbers here are pinned to twelve figures. `make`
+with no target lists the other entry points.
 
 The scripts under `examples/` and `docs/` are not part of the installed
 package, so run them from the repository root with `PYTHONPATH=.`, as
@@ -53,7 +81,7 @@ Forward passes return `(output, cache)`, and backward passes take that
 cache back. That is more typing than a tape, and it is the point: the
 computation graph is explicit rather than hidden.
 
-```python
+```pycon
 >>> import numpy as np
 >>> from tfs import GPT, AdamLite
 
@@ -81,7 +109,7 @@ computation graph is explicit rather than hidden.
 After 400 training steps, greedy decoding on the period-5 toy task
 (start the interpreter in the repository root so `examples` imports):
 
-```python
+```pycon
 >>> from examples.train_pattern import train
 >>> trained = train(steps=400)
 >>> trained.generate(np.array([1, 2, 3]), max_new=7, temperature=0.0)
@@ -91,6 +119,14 @@ array([1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
 `temperature=0` is exact greedy decoding. Negative temperatures and
 out-of-vocabulary ids raise `ValueError` instead of returning something
 plausible.
+
+Both sessions above are executed by `tests/test_readme.py`, which replays
+them in one namespace and diffs every line of output against what is
+printed here. Editing `10080` or the loss to a neighbouring value fails
+the suite. Floats are compared to 1e-12 relative rather than digit by
+digit, because the last digit of a dot product moves with the BLAS and
+that is not a regression — twelve figures leaves that a factor of 10,000
+of room and still fails on a typo in the tenth.
 
 ## Every gradient, checked against the definition
 
@@ -229,6 +265,9 @@ every machine, and it is checked against the closed form
 |    256 |         34,688 |             263 |          131.9x |
 
 (8-token prompt, `max_T = 512`, so nothing here slides the window.)
+`tests/test_readme.py` reads those five rows back out of this file and
+compares them with the counter, so the table cannot drift from the code
+that produces it.
 
 Wall-clock does not follow that ratio, and it is not a tight band either.
 On one core of an Apple M2 (macOS 15.0.1, CPython 3.12.6, NumPy 2.5.1,
@@ -341,6 +380,8 @@ be. The training loss does not.
 | `examples/validate.py` | produces every number in `docs/validation.md` |
 | `examples/regime_handoff.py` | the worked hand-off: labels in, a scored distribution out |
 | `tests/test_properties.py` | randomised invariants — the laws, not the values |
+| `tests/test_readme.py` | replays this file's sessions and re-derives its tables |
+| `Makefile` | one command per task — `make check`, `make gradcheck`, `make figures` |
 
 Everything regenerates from a cold start. The figures use fixed seeds and
 counted operations rather than wall-clock, so re-running on the same
@@ -350,8 +391,8 @@ A different matplotlib version redraws them slightly differently, so
 expect a diff after upgrading it.
 
 ```bash
-PYTHONPATH=. python3 docs/figures.py          # all three figures, ~15 s
-PYTHONPATH=. python3 examples/validate.py     # the validation table, ~20 s
+make figures     # PYTHONPATH=. python3 docs/figures.py    — all three, ~15 s
+make validate    # PYTHONPATH=. python3 examples/validate.py — the table, ~20 s
 ```
 
 ## What this is not
@@ -370,11 +411,16 @@ PYTHONPATH=. python3 examples/validate.py     # the validation table, ~20 s
 - **`max_T` is a hard ceiling.** Learned absolute positions do not
   extrapolate, which the case study above measures rather than asserts.
 
-Next, in rough order of how much there is to learn from writing them:
-weight tying between `token_emb` and `lm_head` (the interesting part is
-the summed gradient — a scatter-add and a dense outer product landing in
-one `.grad`), a BPE tokenizer, and flash-attention-style tiling so the
-score matrix is never materialised at all.
+None of that is planned. The repository does one thing — derive every
+backward pass by hand and prove each one against the definition — and
+that thing is done: 1,312 of 1,312 gradients agree, and the eleven rows
+of `docs/validation.md` are each checked against something outside this
+code. Weight tying, a BPE tokenizer and flash-attention-style tiling
+would all be interesting to write and none of them would make the
+gradients more correct, which is the only claim here. Bug reports
+against a number in the README or a failing check are welcome; feature
+requests will be declined. Fixed seeds, pinned outputs and a version tag
+per release are the maintenance contract instead of a roadmap.
 
 ## License
 

@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.5.0] - 2026-08-05
+
+First tagged release. Everything below is about making the claims in the
+README checkable by a machine rather than by a careful reader.
+
+### Added
+- `tests/test_readme.py`. The README's two interpreter sessions are now
+  extracted from the file, replayed in one shared namespace and diffed
+  line by line against the output printed next to them; the decode-work
+  table is parsed back out of the README and compared with
+  `docs.figures.decode_work`, which counts token-positions through the
+  block stack; and the head-line counts 1,312 and 29 are read off the
+  model `examples/gradcheck.py` builds rather than typed. Verified by
+  mutation before committing: changing `10080` to `10081`, the demo loss
+  in its tenth significant digit, or `2,528` to `2,529` in the table each
+  fails the suite, and all three passed before this commit. Floats are
+  compared at 1e-12 relative rather than character by character, which
+  leaves four orders of magnitude of slack for a different BLAS's
+  summation order and still fails on a typo.
+- `tests/test_metadata.py`. `tfs.__version__` must equal the version in
+  `pyproject.toml`, `CHANGELOG.md` must carry a section for it, and every
+  "N tests" in the README must equal what `pytest --collect-only`
+  actually collects. That last one exists because 1,312 is a count of
+  gradient checks and is easy to mistake for a test count; the real
+  number is now self-correcting instead of hand-maintained.
+- macOS to the CI matrix, alongside Linux, on both 3.11 and 3.12. Every
+  claim in this repository is a float64 number and NumPy does not promise
+  reduction order, so a divergence between Accelerate and OpenBLAS is
+  precisely the failure this suite exists to catch. Testing on one OS
+  left that unguarded.
+- `Makefile`: `test`, `lint`, `check`, `gradcheck`, `validate`,
+  `handoff`, `figures`, `clean`. Each recipe sets the `PYTHONPATH=.` the
+  README would otherwise ask you to type, so the scripts under
+  `examples/` and `docs/` have one obvious entry point.
+
+### Changed
+- The README now says "1,312 gradient checks" and states outright that
+  1,312 counts derivatives rather than tests. The previous wording — "1,312
+  hand-computed partial derivatives" next to a `pytest` line — was true but
+  invited the two numbers to be conflated.
+- The roadmap at the end of the README is gone. It listed weight tying, a
+  BPE tokenizer and flash-attention tiling, none of which are planned, and
+  a list of things that will not happen ages into a claim of abandonment.
+  It is replaced by a scope statement: the gradients are the claim, they
+  are checked, and feature requests will be declined.
+- The two interpreter sessions are fenced as `pycon` rather than `python`,
+  which is what they are and what the new test looks for.
+- `numpy>=1.24` is now `numpy>=1.24,<3`. Reduction order is not part of
+  NumPy's API contract and several numbers here are pinned to twelve
+  figures, so a major-version bump is something to opt into deliberately.
+
+### Fixed
+- `.github/workflows/ci.yml` wrapped `pytest` in `set +e` and exited 0 on
+  exit code 5 with the message "no tests collected yet (bootstrap phase)",
+  a leftover from the first commit that added the workflow. With a full
+  suite that branch was unreachable, but an unreachable hand-rolled
+  exit-code override is indistinguishable, to anyone grepping the file,
+  from a badge engineered to stay green. The step is now `pytest -q`.
+- The README advertised "80 tests, ~10 s". The suite ran 80 tests in
+  about 6 s at that point; it is 87 tests in about 7 s now, and the
+  number is asserted rather than remembered.
+
 ## [0.4.2] - 2026-08-03
 
 ### Fixed

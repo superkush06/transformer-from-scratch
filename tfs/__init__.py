@@ -14,7 +14,7 @@ from .ops import (
 )
 from .train import AdamLite
 
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 __all__ = [
     "GPT", "MultiHeadAttention", "TransformerBlock", "Linear", "FFN",
     "AdamLite",

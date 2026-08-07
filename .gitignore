@@ -9,3 +9,4 @@ build/
 *.png
 *.npz
 !docs/*.png
+!docs/demo/*.png

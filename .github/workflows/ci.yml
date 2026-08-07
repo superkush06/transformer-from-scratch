@@ -3,14 +3,21 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Two operating systems on purpose. Every claim in this repository is a
+    # float64 number, and reduction order is not part of NumPy's API — a
+    # divergence between macOS/Accelerate and Linux/OpenBLAS is exactly the
+    # failure this suite exists to catch.
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
@@ -22,12 +29,7 @@ jobs:
       - name: Lint
         run: ruff check .
       - name: Test
-        run: |
-          set +e
-          pytest -q
-          code=$?
-          if [ "$code" = "5" ]; then
-            echo "no tests collected yet (bootstrap phase)"
-            exit 0
-          fi
-          exit $code
+        run: pytest -q
+      - name: Versions
+        if: always()
+        run: python -c "import numpy, sys; print(numpy.__version__, sys.version)"
