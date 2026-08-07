@@ -11,6 +11,7 @@ has exactly those.
 
 from __future__ import annotations
 
+import random
 import time
 
 import numpy as np
@@ -30,10 +31,48 @@ EPS = 1e-5
 
 VOCAB, MAX_T = 7, 6
 
+# The architecture the reader is auditing. Everything downstream reads this at
+# call time, so changing it re-points the whole page: a different parameter
+# count, different tensors, a different model to be right or wrong about.
+ARCH = {"d_model": 8, "n_heads": 2, "n_blocks": 2, "d_ff": 16, "seed": 0}
+
+# Above this, auditing every scalar stops being interactive. The cost is two
+# forward passes per scalar and the forward pass itself grows with d_model, so
+# it climbs faster than the parameter count does. CI has the same problem and
+# solves it the same way, by sampling inside the large tensors.
+FULL_AUDIT_MAX = 5000
+
 
 def build_model() -> GPT:
-    return GPT(vocab_size=VOCAB, d_model=8, n_heads=2, d_ff=16,
-               n_blocks=2, max_T=MAX_T, seed=0)
+    return GPT(vocab_size=VOCAB, d_model=ARCH["d_model"],
+               n_heads=ARCH["n_heads"], d_ff=ARCH["d_ff"],
+               n_blocks=ARCH["n_blocks"], max_T=MAX_T, seed=ARCH["seed"])
+
+
+def set_arch(d_model=None, n_heads=None, n_blocks=None, d_ff=None, seed=None):
+    """Rebuild the model the reader is auditing."""
+    want = dict(ARCH)
+    for k, v in (("d_model", d_model), ("n_heads", n_heads),
+                 ("n_blocks", n_blocks), ("d_ff", d_ff), ("seed", seed)):
+        if v is not None:
+            want[k] = int(v)
+    if want["d_model"] % want["n_heads"]:
+        raise ValueError(
+            f"{want['n_heads']} heads do not divide d_model {want['d_model']}")
+    if not 1 <= want["n_blocks"] <= 4:
+        raise ValueError("blocks must be 1 to 4")
+    ARCH.update(want)
+    return arch_info()
+
+
+def arch_info():
+    model = build_model()
+    n = sum(p.data.size for p in model.params())
+    return {**ARCH, "params": int(n),
+            "tensors": len(model.named_params()),
+            "head_dim": ARCH["d_model"] // ARCH["n_heads"],
+            "full_audit": n <= FULL_AUDIT_MAX,
+            "limit": FULL_AUDIT_MAX}
 
 
 def set_batch(rows):
@@ -192,11 +231,18 @@ def bug_list():
 def tensor_list():
     """Every parameter tensor, with its shape and its values."""
     model = build_model()
+    for prm in model.params():
+        prm.zero_grad()
+    model.loss_and_grads(IDS, TGT)
     out = []
     for name, p in model.named_params():
+        # the gradient is what the page is about, and a coordinate the batch
+        # never touches has none, so ship both and let the grid show which
+        # cells are actually live
         out.append({"name": name, "shape": list(p.data.shape),
                     "size": int(p.data.size),
-                    "values": [float(v) for v in p.data.flat]})
+                    "values": [float(v) for v in p.data.flat],
+                    "grads": [float(v) for v in p.grad.flat]})
     return {"tensors": out, "total": sum(t["size"] for t in out)}
 
 
@@ -246,21 +292,36 @@ def one_derivative(name: str, index: int, eps: float = EPS):
 _sweep_state: dict = {}
 
 
-def audit_begin(eps: float = EPS):
-    """One backward pass fills every .grad; after this we only perturb."""
+def audit_begin(eps: float = EPS, per_tensor: int = 0):
+    """One backward pass fills every .grad; after this we only perturb.
+
+    `per_tensor` caps how many coordinates are measured inside each tensor.
+    Zero means every scalar. Sampling is what makes a larger model auditable
+    while you wait, and it is what CI already does on the big tensors, so the
+    page reports which mode it ran in rather than quietly doing less work.
+    """
     model = build_model()
     for p in model.params():
         p.zero_grad()
     model.loss_and_grads(IDS, TGT)
-    coords = []
+    rng = random.Random(12345)
+    coords, total = [], 0
     for name, param in model.named_params():
-        for c in range(param.data.size):
-            coords.append((name, c))
+        size = param.data.size
+        total += size
+        if per_tensor and size > per_tensor:
+            # spread over the tensor rather than taking a prefix, which would
+            # only ever look at one row of a weight matrix
+            picks = sorted(rng.sample(range(size), per_tensor))
+        else:
+            picks = range(size)
+        coords.extend((name, c) for c in picks)
     _sweep_state.clear()
     _sweep_state.update(model=model, named=dict(model.named_params()),
                         coords=coords, i=0, eps=float(eps),
                         t0=time.perf_counter(), rows=[])
-    return {"total": len(coords), "eps": float(eps),
+    return {"total": len(coords), "scalars": total, "eps": float(eps),
+            "sampled": len(coords) < total, "per_tensor": per_tensor,
             "tensors": [n for n, _ in model.named_params()], "bug": _active}
 
 
@@ -291,6 +352,9 @@ def audit_step(n: int = 160):
     worst = max((r["r"] for r in st["rows"]), default=0.0)
     result = {"rows": out, "done": done, "at": st["i"],
               "total": len(st["coords"]), "worst": worst}
+    if out:
+        w = max(out, key=lambda r: r["r"])
+        result["worst_now"] = {"name": w["name"], "i": w["i"], "r": w["r"]}
     if done:
         result["ms"] = (time.perf_counter() - st["t0"]) * 1000.0
         per = {}
@@ -306,6 +370,13 @@ def audit_step(n: int = 160):
 # ---------------------------------------------------------------------------
 # 04: why eps = 1e-5
 # ---------------------------------------------------------------------------
+
+def eps_curve_point(name: str, index: int, eps: float):
+    """One coordinate measured at one eps, cheap enough for a live slider."""
+    r = one_derivative(name, index, eps)
+    return {"eps": eps, "rel_err": r["rel_err"], "central": r["central"],
+            "analytic": r["analytic"], "diff": r["diff"]}
+
 
 def eps_point(eps: float, stride: int = 7):
     """Median relative error at one eps, on every stride-th coordinate.
@@ -345,6 +416,22 @@ def eps_point(eps: float, stride: int = 7):
 # ---------------------------------------------------------------------------
 
 PERIOD = [1, 2, 3, 4, 5]
+
+
+def set_period(tokens):
+    """The sequence the model is asked to learn.
+
+    A shorter period fits inside the context window with room to spare; a
+    longer one does not, which is the whole of experiment five.
+    """
+    global PERIOD
+    toks = [int(t) for t in tokens]
+    if not 2 <= len(toks) <= 8:
+        raise ValueError("a period of 2 to 8 tokens")
+    if any(not 0 <= t < VOCAB for t in toks):
+        raise ValueError(f"tokens must be 0 to {VOCAB - 1}")
+    PERIOD = toks
+    return {"period": PERIOD, "length": len(PERIOD), "window": MAX_T}
 
 
 def _batch(rng, batch: int, T: int, fixed_offset: bool):
@@ -389,12 +476,12 @@ def train_step(n: int = 20):
             "last": st["losses"][-1]}
 
 
-def train_sample(prompt=(1, 2, 3), max_new: int = 7):
+def train_sample(prompt=(1, 2, 3), max_new: int = 7, temperature: float = 0.0):
     st = _train_state
     if not st:
         raise RuntimeError("call train_begin first")
     out = st["model"].generate(np.array(list(prompt)), max_new=max_new,
-                               temperature=0.0)
+                               temperature=float(temperature))
     got = [int(v) for v in out[len(prompt):]]
     # What continues the sequence depends on the last token the reader gave,
     # not on how many they gave. Keying off the length assumes every prompt
@@ -411,6 +498,7 @@ def train_sample(prompt=(1, 2, 3), max_new: int = 7):
         want, correct = None, None
     return {"prompt": list(prompt), "out": [int(v) for v in out],
             "continuation": got, "expected": want, "correct": correct,
+            "temperature": float(temperature), "period": list(PERIOD),
             "in_period": last in PERIOD, "step": st["step"], "bug": _active}
 
 
@@ -491,5 +579,7 @@ def positional(steps: int = 400, seed: int = 0, n_pos: int = 14):
             acc.append(1.0 if pred == seq[pos] else 0.0)
         out[tag] = acc
     out["positions"] = list(range(1, n_pos + 1))
-    out["window"] = 6
+    out["window"] = MAX_T
+    out["period"] = list(PERIOD)
+    out["steps"] = steps
     return out

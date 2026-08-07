@@ -10,6 +10,7 @@ gradient I derived by hand, with the code that produced them.
 
 | | | |
 |---|---|---|
+| **00** | Build the model | set the width, heads, blocks and feed-forward, and everything below re-points at yours |
 | **01** | One derivative | pick any weight, watch it measured against the definition |
 | **02** | All 1,312 | the whole audit, on tokens you type |
 | **03** | Break it | drop a term from a backward pass and see who notices |

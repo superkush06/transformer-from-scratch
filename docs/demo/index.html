@@ -213,9 +213,44 @@
 </div>
 
 <!-- ============================= 01 ============================= -->
-<div class="text open sect-first" id="one">
+<div class="text open sect-first" id="zero">
+  <div class="onum">00</div>
+  <span class="m">Before anything else &middot; build the model</span>
+  <h2>Choose what you want me to be right about</h2>
+  <p class="thesis">1,312 derivatives is what the default model happens to
+    have. Change the architecture and it becomes a different number, and every
+    experiment below re-points at your model.</p>
+</div>
+
+<div class="wide">
+  <div class="knobs">
+    <div class="knob">
+      <div class="lab"><b>Width d_model</b><i id="aD">8</i></div>
+      <div class="seg" id="dSeg"></div>
+    </div>
+    <div class="knob">
+      <div class="lab"><b>Heads</b><i id="aH">2</i></div>
+      <div class="seg" id="hSeg"></div>
+    </div>
+    <div class="knob">
+      <div class="lab"><b>Blocks</b><i id="aB">2</i></div>
+      <div class="seg" id="nSeg"></div>
+    </div>
+    <div class="knob">
+      <div class="lab"><b>Feed-forward</b><i id="aF">16</i></div>
+      <div class="seg" id="fSeg"></div>
+    </div>
+  </div>
+  <div class="tiles" id="aTiles"></div>
+</div>
+
+<div class="text"><div class="finding"><span class="m">Finding &middot; the model</span>
+  <p id="f0">Every panel below runs on whatever you set here. The parameter
+    count, the tensor list, the audit, the training, all of it.</p></div></div>
+
+<div class="text open" id="one">
   <div class="onum">01</div>
-  <span class="m">Experiment one of six &middot; one derivative</span>
+  <span class="m">Experiment one &middot; one derivative</span>
   <h2>Pick a weight. Watch me measure it.</h2>
   <p class="thesis">Two independent routes to the same number: the algebra I did on paper, and
     the difference quotient that needs no algebra at all.</p>
@@ -236,11 +271,15 @@
       <div class="seg" id="tSeg" style="max-height:6.2rem;overflow-y:auto"></div>
     </div>
     <div class="knob">
-      <div class="lab"><b>Step size</b><i id="eVal">1e-5</i></div>
-      <div class="seg" id="eSeg"></div>
+      <div class="lab"><b>Step size &epsilon;</b><i id="eVal">1e-5</i></div>
+      <input type="range" id="eSl" min="-9" max="-1" step="0.25" value="-5"
+             aria-label="log10 of epsilon" style="width:100%;accent-color:#1B6CA8" />
+      <div class="why" id="eWhy">drag to watch the same derivative get worse</div>
     </div>
   </div>
-  <figure><div class="cells" id="cells"></div></figure>
+  <figure><div class="cells" id="cells"></div>
+    <div class="why">shade is the size of that weight's gradient on your batch, log scale;
+      outlined cells have none, because your tokens never reach them</div></figure>
   <div class="tiles" id="dTiles"></div>
   <div class="bar">
     <span class="m" id="bState">ready</span>
@@ -354,9 +393,23 @@
 </div>
 
 <div class="wide">
+  <div class="knobs">
+    <div class="knob">
+      <div class="lab"><b>The sequence to learn</b><i id="pdWhat">1 2 3 4 5</i></div>
+      <div class="entry" id="pdEntry">
+        <input id="pdIn" value="1 2 3 4 5" spellcheck="false"
+               aria-label="the repeating sequence, ids 0 to 6" />
+      </div>
+      <div class="why" id="pdWhy">a period shorter than the 6-token window behaves differently</div>
+    </div>
+    <div class="knob">
+      <div class="lab"><b>Steps each</b><i id="poStepsV">400</i></div>
+      <div class="seg" id="poSeg"></div>
+    </div>
+  </div>
   <figure><canvas id="pos"></canvas></figure>
   <div class="bar">
-    <span><button class="m" id="poRun">&#9654; train both, 400 steps each</button></span>
+    <span><button class="m" id="poRun">&#9654; train both</button></span>
     <span class="m" id="poState">not run</span>
   </div>
 </div>
@@ -383,6 +436,10 @@
     <div class="knob">
       <div class="lab"><b>Learning rate</b><i id="lVal">5e-3</i></div>
       <div class="seg" id="lSeg"></div>
+    </div>
+    <div class="knob">
+      <div class="lab"><b>Temperature</b><i id="tVal">0.0</i></div>
+      <div class="seg" id="tempSeg"></div>
     </div>
     <div class="knob">
       <div class="lab"><b>Your prompt</b><i id="pWhat">1 2 3</i></div>
@@ -514,22 +571,108 @@ async function applyBatch() {
   AU = null; drawScatter([], false); paintBoard(null);
   $("#f2").innerHTML = `Each point is one scalar: what I derived on one axis, what the difference
     quotient measured on the other. Run it on your batch.`;
+  if (TENS && !ARCH_BUSY) await refreshTensors();
   return true;
+}
+
+/* Gradients depend on the batch, so the grid has to be re-read whenever the
+   architecture or the tokens change. Reading it before the batch was set gave
+   colours describing data nothing else was using. */
+async function refreshTensors() {
+  TENS = await pyJSON("d.tensor_list()");
+  if (!TENS.tensors.some((t) => t.name === curT)) curT = TENS.tensors[0].name;
+  curI = 0;
+  seg($("#tSeg"), TENS.tensors.map((t) => ({ v: t.name, t: t.name })), curT,
+    (v) => { curT = v; curI = 0; paintCells(); });
+  paintCells();
 }
 
 /* ---------------- 01 one derivative ---------------- */
 let TENS = null, curT = null, curI = 0, curEps = 1e-5;
+let ARCH = null, curTemp = 0, poSteps = 400, ARCH_BUSY = false;
+
+/* Everything measured is about one architecture. When that changes, anything
+   already on screen is about a model that no longer exists, so it goes. */
+function invalidate(why) {
+  AU = null; VPTS = []; POS = null;
+  tiles($("#dTiles"), []); tiles($("#auTiles"), []); tiles($("#bgTiles"), []);
+  tiles($("#epTiles"), []); tiles($("#trTiles"), []);
+  $("#auState").textContent = "not run";
+  $("#bgState").textContent = "audit not run";
+  $("#epState").textContent = "not run";
+  $("#poState").textContent = "not run";
+  $("#trState").textContent = "not trained";
+  $("#tPick").textContent = "click a square above";
+  TR = { losses: [], step: 0, trained: false };
+  $("#bgTrain").disabled = true; $("#trGo").disabled = true;
+  paintBoard(null); drawScatter([], false); drawCmp(null);
+  drawV([]); drawPos(null); drawLoss();
+  if (why) $("#f2").innerHTML = why;
+}
+
+async function applyArch(patch) {
+  ARCH_BUSY = true;                 // applyBatch below must not re-read tensors
+  const want = { ...ARCH, ...patch };
+  try {
+    ARCH = await pyJSON(`d.set_arch(d_model=${want.d_model}, n_heads=${want.n_heads}, ` +
+                        `n_blocks=${want.n_blocks}, d_ff=${want.d_ff})`);
+  } catch (err) {
+    // heads that do not divide the width; put the control back
+    seg($("#hSeg"), HEADS(ARCH.d_model), ARCH.n_heads, (v) => applyArch({ n_heads: +v }));
+    return;
+  }
+  $("#aD").textContent = ARCH.d_model; $("#aH").textContent = ARCH.n_heads;
+  $("#aB").textContent = ARCH.n_blocks; $("#aF").textContent = ARCH.d_ff;
+  seg($("#hSeg"), HEADS(ARCH.d_model), ARCH.n_heads, (v) => applyArch({ n_heads: +v }));
+  const full = ARCH.full_audit;
+  tiles($("#aTiles"), [
+    ["parameters", ARCH.params.toLocaleString()],
+    ["tensors", String(ARCH.tensors)],
+    ["head width", String(ARCH.head_dim)],
+    ["derivatives to check", full ? ARCH.params.toLocaleString() : "sampled"],
+    ["audit mode", full ? "every scalar" : `${PER_TENSOR} per tensor`,
+      full ? "ok" : ""]]);
+  await applyBatch();
+  ARCH_BUSY = false;
+  await refreshTensors();
+  invalidate();
+  $("#f0").innerHTML = full
+    ? `<span class="n">${ARCH.params.toLocaleString()}</span> parameters across
+       <span class="n">${ARCH.tensors}</span> tensors, and the audit below will check every
+       single one of them against a difference quotient.`
+    : `<span class="n">${ARCH.params.toLocaleString()}</span> parameters across
+       <span class="n">${ARCH.tensors}</span> tensors. That is past the point where measuring
+       every scalar stays interactive, since the cost is two forward passes each and the
+       forward pass grows with the width too. The audit samples
+       <span class="n">${PER_TENSOR}</span> coordinates inside any tensor bigger than that,
+       spread across it rather than taken off the front, which is what CI does on this repo
+       for the same reason.`;
+}
+const PER_TENSOR = 60;
+const HEADS = (d) => [1, 2, 4, 8].filter((h) => d % h === 0).map((h) => ({ v: h, t: String(h) }));
 function paintCells() {
   const t = TENS.tensors.find((x) => x.name === curT);
   $("#tShape").textContent = `${t.shape.join(" x ")} = ${t.size}`;
-  const mx = Math.max(...t.values.map(Math.abs), 1e-9);
-  $("#cells").innerHTML = t.values.map((v, i) => {
-    const a = Math.min(1, Math.abs(v) / mx);
-    const col = v >= 0 ? `rgba(27,108,168,${.10 + .82 * a})`
-                       : `rgba(192,95,27,${.10 + .82 * a})`;
-    return `<button data-i="${i}" style="background:${col}" class="${i === curI ? "on" : ""}"
-      title="index ${i} = ${v.toFixed(5)}" aria-label="scalar ${i}"></button>`;
+  const g = t.grads || t.values;
+  const mx = Math.max(...g.map(Math.abs), 1e-12);
+  $("#cells").innerHTML = g.map((gv, i) => {
+    // log scale, because gradients here span five decades and a linear ramp
+    // would show one bright cell and a field of nothing
+    const a = gv === 0 ? 0
+      : Math.min(1, Math.max(0, 1 + Math.log10(Math.abs(gv) / mx) / 5));
+    const col = gv === 0 ? "var(--paper)"
+      : (t.values[i] >= 0 ? `rgba(27,108,168,${.08 + .84 * a})`
+                          : `rgba(192,95,27,${.08 + .84 * a})`);
+    const dead = gv === 0 ? ";box-shadow:inset 0 0 0 1px var(--hair)" : "";
+    return `<button data-i="${i}" style="background:${col}${dead}" class="${i === curI ? "on" : ""}"
+      title="index ${i}: weight ${t.values[i].toFixed(5)}, gradient ${gv.toExponential(2)}"
+      aria-label="scalar ${i}"></button>`;
   }).join("");
+  // open on a coordinate that has something to show
+  if (!g[curI]) {
+    const live = g.findIndex((v) => v !== 0);
+    if (live >= 0) curI = live;
+  }
 }
 async function measure(i) {
   if (busy) return;
@@ -611,7 +754,8 @@ function drawScatter(rows, done) {
 }
 const w0 = () => $("#scatter").parentElement.clientWidth;
 async function runAudit(draw, stateEl) {
-  await pyJSON("d.audit_begin()");
+  const mode = ARCH && !ARCH.full_audit ? PER_TENSOR : 0;
+  const started = await pyJSON(`d.audit_begin(per_tensor=${mode})`);
   const rows = []; let last;
   while (true) {
     last = await pyJSON("d.audit_step(140)");
@@ -622,7 +766,7 @@ async function runAudit(draw, stateEl) {
     if (last.done) break;
   }
   if (draw) draw(rows, true);
-  return { rows, last };
+  return { rows, last, started };
 }
 async function auditRun() {
   if (busy) return;
@@ -631,18 +775,21 @@ async function auditRun() {
   [...$("#bugSeg").querySelectorAll("button")].forEach((x) =>
     x.classList.toggle("on", x.dataset.v === "none"));
   curBug = "none"; $("#bugWhat").textContent = "as written";
-  const { rows, last } = await runAudit((r, done) => drawScatter(r, done), $("#auState"));
+  const { rows, last, started } = await runAudit((r, done) => drawScatter(r, done), $("#auState"));
   AU = rows;
   const mags = rows.map((r) => Math.abs(r.a)).filter((v) => v > 0);
   $("#auState").textContent = `${last.total} in ${Math.round(last.ms)} ms`;
   tiles($("#auTiles"), [
-    ["derivatives", last.total.toLocaleString()],
+    ["derivatives", last.total.toLocaleString() + (started.sampled ? " sampled" : "")],
     ["tensors", "29"],
     ["worst rel. error", sci(last.worst), last.failing.length ? "no" : "ok"],
     ["tolerance in ci", sci(last.tolerance, 0)],
     ["failing", String(last.failing.length), last.failing.length ? "no" : "ok"],
     ["elapsed", `${Math.round(last.ms)} ms`]]);
-  $("#f2").innerHTML = `All <span class="n">${last.total.toLocaleString()}</span> of them in
+  $("#f2").innerHTML = `${started.sampled
+      ? `<span class="n">${last.total.toLocaleString()}</span> coordinates sampled from
+         <span class="n">${started.scalars.toLocaleString()}</span>`
+      : `All <span class="n">${last.total.toLocaleString()}</span> of them`} in
     <span class="n">${Math.round(last.ms)} ms</span>, on the batch you gave me, spanning
     gradients from <span class="n">${sci(Math.min(...mags), 1)}</span> to
     <span class="n">${sci(Math.max(...mags), 1)}</span>. The worst relative error anywhere in the
@@ -871,21 +1018,29 @@ async function posRun() {
   busy = true; $("#poRun").disabled = true;
   $("#poState").textContent = "training two models";
   await py.runPythonAsync("d.set_bug('none')");
-  const p = await pyJSON("d.positional(steps=400)");
+  const p = await pyJSON(`d.positional(steps=${poSteps})`);
   bump(1600); POS = p; drawPos(p);
   let firstFail = null;
   p.positions.forEach((pos, i) => { if (firstFail === null && p.fixed[i] < .5) firstFail = pos; });
   const fixOk = p.fixed.filter((x) => x > .5).length;
   const ranOk = p.random.filter((x) => x > .5).length;
+  const per = p.period.length, win = p.window;
   $("#poState").textContent = "done";
-  $("#f5").innerHTML = `The one-phase model is exact through position
-    <span class="n">${(firstFail || p.positions.length + 1) - 1}</span> and wrong at
-    <span class="n bad">${firstFail}</span>, the first prediction whose context window has slid to
-    a phase it never saw. It scores <span class="n">${fixOk}</span> of
-    <span class="n">${p.positions.length}</span>. The model trained on every phase scores
-    <span class="n good">${ranOk}</span>. Same architecture, same steps, the same hand-derived
-    gradients, both fitting their training data perfectly. The only difference is what was in the
-    batches, which is a fact about the data rather than about the model or its calculus.`;
+  $("#f5").innerHTML = firstFail === null
+    ? `Nothing failed. Your period is <span class="n">${per}</span> tokens and the context window
+       holds <span class="n">${win}</span>, so every window the model will ever see at test time
+       is one it already saw in training, whatever phase it started at. There is no phase left to
+       generalise to. Both models score <span class="n good">${fixOk}</span> of
+       <span class="n">${p.positions.length}</span>. Make the period longer than
+       <span class="n">${win}</span> and the cliff comes back.`
+    : `The one-phase model is exact through position
+       <span class="n">${firstFail - 1}</span> and wrong at
+       <span class="n bad">${firstFail}</span>, the first prediction whose context window has slid
+       to a phase it never saw. It scores <span class="n">${fixOk}</span> of
+       <span class="n">${p.positions.length}</span>. The model trained on every phase scores
+       <span class="n good">${ranOk}</span>. Same architecture, same steps, the same hand-derived
+       gradients, and both fit their training data. The only difference is what was in the
+       batches, which is a fact about the data rather than about the model or its calculus.`;
   busy = false; $("#poRun").disabled = false;
 }
 
@@ -958,7 +1113,7 @@ async function generate() {
   }
   $("#pEntry").classList.remove("bad"); $("#pWhy").classList.remove("bad");
   busy = true; $("#trGo").disabled = true;
-  const g = await pyJSON(`d.train_sample(prompt=${JSON.stringify(toks)})`);
+  const g = await pyJSON(`d.train_sample(prompt=${JSON.stringify(toks)}, temperature=${curTemp})`);
   bump(7);
   $("#pWhat").textContent = toks.join(" ");
   $("#pWhy").textContent = `continued with ${g.continuation.join(" ")}`;
@@ -995,12 +1150,22 @@ async function boot() {
   py.FS.writeFile("tfsdemo.py", await (await fetch(`tfsdemo.py?v=${stamp.driver}`, fresh)).text());
   await py.runPythonAsync("import sys; sys.path.insert(0,'.')\nimport tfsdemo as d");
 
-  TENS = await pyJSON("d.tensor_list()");
-  curT = TENS.tensors[0].name;
-  seg($("#tSeg"), TENS.tensors.map((t) => ({ v: t.name, t: t.name })), curT,
-    (v) => { curT = v; curI = 0; paintCells(); });
-  seg($("#eSeg"), [1e-3, 1e-4, 1e-5, 1e-6, 1e-8].map((e) => ({ v: e, t: sci(e, 0) })), 1e-5,
-    (v) => { curEps = Number(v); $("#eVal").textContent = sci(curEps, 0); measure(curI); });
+  ARCH = await pyJSON("d.arch_info()");
+  seg($("#dSeg"), [8, 16, 24, 32].map((d) => ({ v: d, t: String(d) })), 8,
+    (v) => applyArch({ d_model: +v }));
+  seg($("#nSeg"), [1, 2, 3, 4].map((n) => ({ v: n, t: String(n) })), 2,
+    (v) => applyArch({ n_blocks: +v }));
+  seg($("#fSeg"), [16, 32, 64].map((f) => ({ v: f, t: String(f) })), 16,
+    (v) => applyArch({ d_ff: +v }));
+  // the tensor list and its gradient shading come from applyArch below, which
+  // sets the batch first
+  let eTimer = null;
+  $("#eSl").addEventListener("input", (e) => {
+    curEps = Math.pow(10, Number(e.target.value));
+    $("#eVal").textContent = sci(curEps, 1);
+    clearTimeout(eTimer);
+    eTimer = setTimeout(() => { if (!busy) measure(curI); }, 200);
+  });
   BUGS = await pyJSON("d.bug_list()");
   seg($("#bugSeg"), BUGS.map((b) => ({
     v: b.key, warn: b.key !== "none",
@@ -1014,12 +1179,17 @@ async function boot() {
       ? `Back to the derivation as I wrote it. Re-audit to confirm.`
       : `Re-audit and watch which of the 29 tensors go wrong.`;
   });
+  seg($("#poSeg"), [100, 400, 900].map((n) => ({ v: n, t: String(n) })), 400,
+    (v) => { poSteps = Number(v); $("#poStepsV").textContent = v;
+             POS = null; drawPos(null); $("#poState").textContent = "not run"; });
+  seg($("#tempSeg"), [0, 0.4, 0.9].map((t) => ({ v: t, t: t.toFixed(1) })), 0,
+    (v) => { curTemp = Number(v); $("#tVal").textContent = curTemp.toFixed(1); });
   seg($("#sSeg"), [0, 1, 2, 3].map((s) => ({ v: s, t: String(s) })), 0,
     (v) => { curSeed = Number(v); $("#sVal").textContent = v; });
   seg($("#lSeg"), [1e-3, 5e-3, 2e-2].map((l) => ({ v: l, t: sci(l, 0) })), 5e-3,
     (v) => { curLr = Number(v); $("#lVal").textContent = sci(curLr, 0); });
 
-  await applyBatch();
+  await applyArch({});
   paintCells(); paintBoard(null);
   drawScatter([], false); drawCmp(null); drawV([]); drawPos(null); drawLoss();
   $("#boot").textContent = "ready";
@@ -1034,6 +1204,34 @@ let bTimer = null;
 $("#bIn").addEventListener("input", () => {
   clearTimeout(bTimer);
   bTimer = setTimeout(() => { if (!busy) applyBatch(); }, 420);
+});
+let pdTimer = null;
+$("#pdIn").addEventListener("input", () => {
+  clearTimeout(pdTimer);
+  pdTimer = setTimeout(async () => {
+    if (busy) return;
+    let toks;
+    try {
+      toks = $("#pdIn").value.split(/[\s,]+/).filter(Boolean).map(Number);
+      if (toks.length < 2 || toks.length > 8) throw new Error("2 to 8 tokens");
+      for (const t of toks) {
+        if (!Number.isInteger(t) || t < 0 || t > 6) throw new Error("ids 0 to 6");
+      }
+    } catch (err) {
+      $("#pdEntry").classList.add("bad"); $("#pdWhy").classList.add("bad");
+      $("#pdWhy").textContent = err.message; return;
+    }
+    $("#pdEntry").classList.remove("bad"); $("#pdWhy").classList.remove("bad");
+    const r = await pyJSON(`d.set_period(${JSON.stringify(toks)})`);
+    $("#pdWhat").textContent = toks.join(" ");
+    $("#pdWhy").textContent = r.length <= r.window
+      ? `period ${r.length}, which fits inside the ${r.window}-token window`
+      : `period ${r.length}, longer than the ${r.window}-token window`;
+    POS = null; drawPos(null); $("#poState").textContent = "not run";
+    TR = { losses: [], step: 0, trained: false };
+    $("#trGo").disabled = true; $("#trState").textContent = "not trained";
+    drawLoss();
+  }, 420);
 });
 $("#auRun").addEventListener("click", auditRun);
 $("#bgAudit").addEventListener("click", bugAudit);
