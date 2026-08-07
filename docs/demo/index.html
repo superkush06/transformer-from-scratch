@@ -259,10 +259,22 @@
 <!-- 01 -->
 <div class="text open sect-first" id="one">
   <div class="onum">01</div>
-  <span class="m">Teach it something</span>
+  <span class="m">Experiment one of four &middot; training</span>
   <h2>Give it text. Watch it learn to write.</h2>
   <p class="thesis">Character by character, from nothing. Paste your own or keep the default,
     then press train and read the samples as they come.</p>
+</div>
+
+<div class="text">
+  <p>The model reads one character at a time and has one job: given everything up to here, what
+    comes next. It starts knowing nothing, including that <code>q</code> is followed by
+    <code>u</code> and that words have spaces between them. Everything it ends up knowing about
+    your text, it learns from being wrong about that question a few thousand times.</p>
+  <p>Which makes the loss readable. It's how surprised it was, averaged over every character it
+    tried to predict. A model guessing uniformly over an alphabet of <em>V</em> characters pays
+    <span class="n">log V</span> every time, so with the 24 characters in the passage below,
+    <span class="n">3.18</span> means it has learned nothing at all. Watch the curve cross that
+    line and you're watching it work out that some characters follow others.</p>
 </div>
 
 <div class="wide">
@@ -305,10 +317,21 @@
 <!-- 02 -->
 <div class="text open" id="two">
   <div class="onum">02</div>
-  <span class="m">Talk to it</span>
+  <span class="m">Experiment two of four &middot; sampling</span>
   <h2>Write a prompt. Watch it answer, one character at a time.</h2>
   <p class="thesis">The bars are what it thinks comes next, before it commits. Temperature
     decides how much notice it takes of them.</p>
+</div>
+
+<div class="text">
+  <p>Generating is the same forward pass you just trained, run one character at a time. The model
+    turns your prompt into a score for every character in the alphabet, those scores become
+    probabilities, one is drawn, and it goes back in as input for the next. The bars below are
+    that distribution, caught before the draw.</p>
+  <p>Temperature divides the scores before they become probabilities. At zero it always takes the
+    tallest bar, which is why it loops: the same context gives the same character, forever. Raise
+    it and the smaller bars get a real chance, so it stops repeating and starts inventing
+    spellings. Somewhere in the middle is a model that sounds like your text without reciting it.</p>
 </div>
 
 <div class="wide">
@@ -343,10 +366,23 @@
 <!-- 03 -->
 <div class="text open" id="three">
   <div class="onum">03</div>
-  <span class="m">Read its mind</span>
+  <span class="m">Experiment three of four &middot; attention</span>
   <h2>Where each head is looking</h2>
   <p class="thesis">One square per pair of characters: how much the row attends to the
     column. The top-right triangle is empty because nothing may read the future.</p>
+</div>
+
+<div class="text">
+  <p>Attention is how a character decides which earlier characters are worth reading. Every
+    position produces a query, every position produces a key, and the match between them becomes
+    a weight. The character then takes a weighted average of what those positions hold. So each
+    row of the grid below is one character asking the question, and the brightness along it is
+    the answer.</p>
+  <p>The upper right is blank by construction. Position <em>i</em> may only read positions up to
+    <em>i</em>, because a model allowed to see the next character would score perfectly and learn
+    nothing. Each block runs several of these at once, and they don't end up doing the same job:
+    compare the heads in block 0, which read raw characters, against those in block 1, which read
+    whatever block 0 already assembled.</p>
 </div>
 
 <div class="wide">
@@ -369,7 +405,7 @@
 <!-- 04 -->
 <div class="text open" id="four">
   <div class="onum">04</div>
-  <span class="m">Check the maths</span>
+  <span class="m">Experiment four of four &middot; the gradients</span>
   <h2>Every gradient in that, derived by hand</h2>
   <p class="thesis">A derivative is defined as a limit of a difference quotient, so it can be
     checked with no calculus at all: nudge a weight, see what the loss does, divide.</p>
@@ -380,6 +416,11 @@
     perturbs that one number by &plusmn;&epsilon;, runs two full forward passes, and compares
     what the loss actually did against what my hand-written backward pass claimed it would.
     The two sides share no code: one is algebra I did on paper, the other is arithmetic.</p>
+  <p>Both axes are on a log scale because the gradients here span five decades, and agreement has
+    to hold at the small end as well as the large. A point off the diagonal is a derivative I got
+    wrong. The second button removes one term from the gradient of LayerNorm, the piece that
+    accounts for its variance depending on every coordinate at once, which is the mistake this
+    check was written to catch.</p>
 </div>
 
 <div class="wide">
