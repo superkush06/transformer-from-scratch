@@ -18,6 +18,12 @@ gradient I derived by hand, with the code that produced them.
 | **05** | Position | exact until the context window slides |
 | **06** | Train it | 400 steps, then a prompt of your choosing |
 
+Or open the notebook, which does the three checks a browser can't:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/superkush06/transformer-from-scratch/blob/main/notebooks/audit.ipynb)
+The gradients are diffed against PyTorch autograd there, agreeing to about
+`1e-15` in float64, which is a stronger check than the central differences
+below because autograd doesn't share my forward pass.
+
 Nothing there is precomputed. The page runs this package under Pyodide, so
 every figure is the library answering in your tab, and the batch it audits is
 whichever tokens you give it.
