@@ -651,3 +651,193 @@ def positional(steps: int = 400, seed: int = 0, n_pos: int = 14):
     out["period"] = list(PERIOD)
     out["steps"] = steps
     return out
+
+
+# ---------------------------------------------------------------------------
+# A character-level GPT on text the reader supplies.
+#
+# Same package, same hand-derived backward passes, same GPT class. The only
+# thing that changes is the shape: a vocabulary built from their text, a
+# 32-character context instead of 6, and enough width that the thing has
+# something to say. Everything the audit panels do still applies to this
+# model, which is the point of putting them on the same page.
+# ---------------------------------------------------------------------------
+
+CORPUS = {"text": "", "stoi": {}, "itos": [], "data": None}
+_gpt: dict = {}
+
+DEFAULT_TEXT = (
+    "to be or not to be that is the question whether tis nobler in the mind to "
+    "suffer the slings and arrows of outrageous fortune or to take arms against "
+    "a sea of troubles and by opposing end them to die to sleep no more and by a "
+    "sleep to say we end the heartache and the thousand natural shocks that "
+    "flesh is heir to tis a consummation devoutly to be wished "
+)
+
+
+def corpus_set(text: str = ""):
+    """Build a character vocabulary from the reader's text."""
+    text = (text or DEFAULT_TEXT).strip()
+    if len(text) < 40:
+        raise ValueError("give me at least 40 characters to learn from")
+    text = text[:4000]
+    chars = sorted(set(text))
+    if len(chars) > 96:
+        raise ValueError(f"{len(chars)} distinct characters is too many; keep it simple")
+    stoi = {c: i for i, c in enumerate(chars)}
+    CORPUS.update(text=text, stoi=stoi, itos=chars,
+                  data=np.array([stoi[c] for c in text]))
+    return {"chars": len(text), "vocab": len(chars),
+            "alphabet": "".join(chars).replace("\n", " "),
+            "preview": text[:80]}
+
+
+def gpt_begin(d_model: int = 48, n_heads: int = 4, n_blocks: int = 2,
+              d_ff: int = 96, ctx: int = 32, batch: int = 16,
+              lr: float = 3e-3, seed: int = 0):
+    if CORPUS["data"] is None:
+        corpus_set()
+    ctx = max(8, min(48, int(ctx)))
+    model = GPT(vocab_size=len(CORPUS["itos"]), d_model=int(d_model),
+                n_heads=int(n_heads), d_ff=int(d_ff), n_blocks=int(n_blocks),
+                max_T=ctx, seed=int(seed))
+    _gpt.clear()
+    _gpt.update(model=model, opt=AdamLite(model.params(), lr=float(lr)),
+                rng=np.random.default_rng(int(seed)), ctx=ctx,
+                batch=int(batch), step=0, losses=[])
+    return {"params": int(sum(p.data.size for p in model.params())),
+            "tensors": len(model.named_params()), "ctx": ctx,
+            "vocab": len(CORPUS["itos"]), "batch": int(batch)}
+
+
+def gpt_step(n: int = 25):
+    st = _gpt
+    if not st:
+        raise RuntimeError("call gpt_begin first")
+    data, T, B = CORPUS["data"], st["ctx"], st["batch"]
+    if len(data) <= T + 1:
+        raise ValueError("the text is shorter than the context window")
+    model, opt, rng = st["model"], st["opt"], st["rng"]
+    t0 = time.perf_counter()
+    for _ in range(int(n)):
+        ix = rng.integers(0, len(data) - T - 1, B)
+        ids = np.stack([data[i:i + T] for i in ix])
+        tgt = np.stack([data[i + 1:i + T + 1] for i in ix])
+        opt.zero_grad()
+        st["losses"].append(float(model.loss_and_grads(ids, tgt)))
+        opt.step()
+        st["step"] += 1
+    return {"step": st["step"], "losses": st["losses"][-int(n):],
+            "last": st["losses"][-1], "ms": (time.perf_counter() - t0) * 1000}
+
+
+def gpt_sample(prompt: str = "", n: int = 90, temperature: float = 0.5):
+    """Generate, and say which characters the prompt had to drop."""
+    st = _gpt
+    if not st:
+        raise RuntimeError("call gpt_begin first")
+    stoi, itos = CORPUS["stoi"], CORPUS["itos"]
+    prompt = prompt or CORPUS["text"][:8]
+    kept = [c for c in prompt if c in stoi]
+    dropped = sorted({c for c in prompt if c not in stoi})
+    if not kept:
+        kept = [CORPUS["text"][0]]
+    ids = np.array([stoi[c] for c in kept[-st["ctx"]:]])
+    out = st["model"].generate(ids, max_new=int(n),
+                               temperature=float(temperature))
+    text = "".join(itos[int(i)] for i in out)
+    return {"text": text, "prompt": "".join(kept), "dropped": dropped,
+            "step": st["step"], "temperature": float(temperature)}
+
+
+def gpt_next(prompt: str = "", k: int = 8):
+    """The next-character distribution, for the bar the page draws."""
+    st = _gpt
+    if not st:
+        raise RuntimeError("call gpt_begin first")
+    stoi, itos = CORPUS["stoi"], CORPUS["itos"]
+    kept = [stoi[c] for c in prompt if c in stoi][-st["ctx"]:]
+    if not kept:
+        kept = [stoi[CORPUS["text"][0]]]
+    logits, _ = st["model"].forward(np.array([kept]))
+    z = logits[0, -1]
+    p = np.exp(z - z.max())
+    p /= p.sum()
+    top = np.argsort(p)[::-1][:int(k)]
+    return {"top": [{"ch": itos[int(i)].replace("\n", "\\n"),
+                     "p": float(p[i])} for i in top],
+            "context": "".join(itos[i] for i in kept)}
+
+
+def gpt_attention(text: str = ""):
+    """Every head's attention over a string, for the heatmaps."""
+    st = _gpt
+    if not st:
+        raise RuntimeError("call gpt_begin first")
+    stoi = CORPUS["stoi"]
+    kept = [c for c in (text or CORPUS["text"][:16]) if c in stoi][-st["ctx"]:]
+    if len(kept) < 2:
+        kept = list(CORPUS["text"][:8])
+    ids = np.array([[stoi[c] for c in kept]])
+    _, cache = st["model"].forward(ids)
+    heads = []
+    for b, bc in enumerate(cache[1]):
+        attn = bc[1][4]
+        for h in range(attn.shape[1]):
+            m = attn[0, h]
+            heads.append({"block": b, "head": h,
+                          "w": [[float(v) for v in row] for row in m]})
+    return {"chars": [c.replace("\n", "\\n").replace(" ", "·") for c in kept],
+            "heads": heads, "step": st["step"]}
+
+
+def gpt_audit_sample(per_tensor: int = 30, eps: float = EPS):
+    """The gradient check, on the model the reader just trained.
+
+    This is the join between the two halves of the page. The audit is not a
+    separate toy; it runs on the same weights that produced the text above.
+    """
+    st = _gpt
+    if not st:
+        raise RuntimeError("call gpt_begin first")
+    model, data, T, B = st["model"], CORPUS["data"], st["ctx"], min(4, st["batch"])
+    rng = np.random.default_rng(7)
+    ix = rng.integers(0, len(data) - T - 1, B)
+    ids = np.stack([data[i:i + T] for i in ix])
+    tgt = np.stack([data[i + 1:i + T + 1] for i in ix])
+
+    for p in model.params():
+        p.zero_grad()
+    model.loss_and_grads(ids, tgt)
+
+    def loss():
+        logits, _ = model.forward(ids)
+        return float(softmax_crossentropy(logits, tgt)[0])
+
+    pick = random.Random(11)
+    rows, total, t0 = [], 0, time.perf_counter()
+    for name, param in model.named_params():
+        size = param.data.size
+        total += size
+        idx = (sorted(pick.sample(range(size), per_tensor))
+               if size > per_tensor else range(size))
+        for c in idx:
+            a = float(param.grad.flat[c])
+            o = float(param.data.flat[c])
+            param.data.flat[c] = o + eps
+            up = loss()
+            param.data.flat[c] = o - eps
+            dn = loss()
+            param.data.flat[c] = o
+            central = (up - dn) / (2 * eps)
+            err = abs(a - central)
+            rows.append({"name": name, "a": a, "n": central,
+                         "r": 0.0 if err <= ATOL else err / max(abs(central), 1e-12)})
+    worst = max((r["r"] for r in rows), default=0.0)
+    per = {}
+    for r in rows:
+        per[r["name"]] = max(per.get(r["name"], 0.0), r["r"])
+    return {"rows": rows, "checked": len(rows), "scalars": total,
+            "worst": worst, "tolerance": TOLERANCE,
+            "failing": sorted(k for k, v in per.items() if v > TOLERANCE),
+            "ms": (time.perf_counter() - t0) * 1000, "step": st["step"]}
