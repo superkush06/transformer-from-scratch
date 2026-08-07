@@ -575,6 +575,53 @@ def train_pair(kind: str, steps: int = 400, seed: int = 0):
     return out
 
 
+def attention(tokens=None, trained: bool = True):
+    """Every head's attention matrix, for the page to draw.
+
+    The forward cache already holds these, so this is a read rather than a
+    second computation. Untrained heads are close to uniform over whatever the
+    causal mask allows; the interesting thing is watching that break as the
+    model learns, which is why this takes `trained` rather than always
+    building a fresh model.
+    """
+    toks = [int(t) for t in (tokens or PERIOD[:MAX_T])][:MAX_T]
+    if len(toks) < 2:
+        raise ValueError("at least 2 tokens")
+    if any(not 0 <= t < VOCAB for t in toks):
+        raise ValueError(f"tokens must be 0 to {VOCAB - 1}")
+
+    if trained and _train_state:
+        model = _train_state["model"]
+        step = _train_state["step"]
+    else:
+        model = build_model()
+        step = 0
+    logits, cache = model.forward(np.array([toks]))
+    _, block_caches, _, _ = cache
+
+    heads = []
+    for b, bc in enumerate(block_caches):
+        attn = bc[1][4]                      # (B, h, T, T)
+        for h in range(attn.shape[1]):
+            m = attn[0, h]
+            # how far from "spread evenly over everything I am allowed to see"
+            T = m.shape[0]
+            ent = 0.0
+            for i in range(T):
+                row = m[i, : i + 1]
+                p_ = row[row > 1e-12]
+                ent += float(-(p_ * np.log(p_)).sum()) / max(1, T)
+            heads.append({"block": b, "head": h,
+                          "w": [[float(v) for v in row] for row in m],
+                          "entropy": ent})
+    probs = np.exp(logits[0, -1] - logits[0, -1].max())
+    probs /= probs.sum()
+    return {"tokens": toks, "heads": heads, "step": step,
+            "n_blocks": len(block_caches),
+            "n_heads": len(heads) // max(1, len(block_caches)),
+            "next": [float(v) for v in probs]}
+
+
 # ---------------------------------------------------------------------------
 # 05: the position where it stops working
 # ---------------------------------------------------------------------------
