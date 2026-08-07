@@ -29,3 +29,9 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Notebook cells are read top to bottom by a person, not maintained as a
+# module. Semicolons keep a plotting cell compact and a `for step in range(n)`
+# that ignores its counter reads better than `for _ in`.
+"notebooks/*.ipynb" = ["E702", "B007"]

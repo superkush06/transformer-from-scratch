@@ -801,7 +801,7 @@ async function auditRun() {
 }
 
 /* ---------------- 03 break it ---------------- */
-let BUGS = [], curBug = "none";
+let BUGS = [], curBug = "none", lastWorst = 0;
 function paintBoard(per, failing) {
   if (!per) {
     $("#board").innerHTML =
@@ -821,6 +821,7 @@ async function bugAudit() {
   await py.runPythonAsync(`d.set_bug(${JSON.stringify(curBug)})`);
   const { last } = await runAudit(null, $("#bgState"));
   paintBoard(last.per_tensor, last.failing);
+  lastWorst = last.worst;
   $("#bgState").textContent = `${last.total} in ${Math.round(last.ms)} ms`;
   const nOk = 29 - last.failing.length;
   tiles($("#bgTiles"), [
@@ -883,16 +884,28 @@ async function bugTrain() {
   const a = pair.true.losses[pair.true.losses.length - 1];
   const b = pair.bug.losses[pair.bug.losses.length - 1];
   $("#bgState").textContent = "done";
-  $("#f3").innerHTML = `Here is the part worth staying for. That derivative is wrong by orders of
-    magnitude on individual coordinates, and the two loss curves land on top of each other:
-    <span class="h n">${a.toFixed(5)}</span> against <span class="bad n">${b.toFixed(5)}</span>
-    after 400 steps, and the broken model still continues the sequence with
-    <span class="n">${pair.bug.sample.continuation.join(" ")}</span>. The reason is the angle.
-    Across all 1,312 coordinates the wrong gradient sits
-    <span class="n">${cm.degrees.toFixed(1)}&deg;</span> from the right one, a cosine of
-    <span class="n">${cm.cosine.toFixed(4)}</span>, because the error is spread thinly over a lot
-    of numbers. That is close enough for Adam, which normalises per coordinate and walks downhill
-    regardless. A loss curve cannot audit a derivative. That is what the 1,312 checks are for.`;
+  // Whether training notices depends on the bug, so say what happened rather
+  // than asserting it never notices.
+  const ratio = b / a, hid = ratio < 3;
+  $("#f3").innerHTML = `That derivative is wrong by a factor of
+    <span class="n">${Math.round(lastWorst).toLocaleString()}</span> on its worst coordinate, and
+    across all <span class="n">${(ARCH ? ARCH.params : 1312).toLocaleString()}</span> of them the
+    wrong gradient sits <span class="n">${cm.degrees.toFixed(1)}&deg;</span> from the right one, a
+    cosine of <span class="n">${cm.cosine.toFixed(4)}</span>, because the error is spread thinly
+    over a lot of numbers.
+    ${hid
+      ? `Training does not notice. After 400 steps the loss is
+         <span class="h n">${a.toFixed(4)}</span> correct against
+         <span class="bad n">${b.toFixed(4)}</span> broken, the curves lie on top of each other,
+         and the broken model still continues the sequence with
+         <span class="n">${pair.bug.sample.continuation.join(" ")}</span>. Adam normalises per
+         coordinate and walks downhill on a gradient that points roughly the right way.`
+      : `This one training does notice: <span class="h n">${a.toFixed(4)}</span> correct against
+         <span class="bad n">${b.toFixed(4)}</span> broken, and it continues the sequence with
+         <span class="n">${pair.bug.sample.continuation.join(" ")}</span>.`}
+    Try the others. Some wrong derivations wreck the loss curve and some are invisible in it, which
+    is the problem: you cannot tell which kind you have by looking at the curve. The audit does not
+    depend on which kind it is.`;
   busy = false; $("#bgTrain").disabled = false;
 }
 

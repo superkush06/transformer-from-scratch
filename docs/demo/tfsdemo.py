@@ -16,7 +16,9 @@ import time
 
 import numpy as np
 
+import tfs
 import tfs.layers as layers
+import tfs.model as model
 import tfs.ops as ops
 from tfs import GPT, AdamLite
 from tfs.ops import softmax_crossentropy
@@ -27,6 +29,14 @@ IDS = np.array([[1, 2, 1, 2, 5], [3, 3, 0, 1, 1]])
 TGT = np.array([[2, 1, 2, 5, 6], [3, 0, 1, 1, 4]])
 TOLERANCE = 1e-4
 EPS = 1e-5
+
+# A pure relative test is the wrong instrument near zero. The central
+# difference has an absolute noise floor of roughly eta*|f|/eps, about 4e-11
+# here, so a coordinate whose true gradient is that small can agree perfectly
+# in absolute terms and still show a relative error of order one. Judging it
+# relatively marks a correct derivative red, which is what happened on inputs
+# as ordinary as "1 0 4". Pass on either test, the way numpy.allclose does.
+ATOL = 1e-9
 
 
 VOCAB, MAX_T = 7, 6
@@ -196,24 +206,30 @@ BUGS = {
 _active = "none"
 
 
-def set_bug(kind: str) -> str:
-    """Swap a wrong backward pass in, or put the right one back.
+# Every module that did `from .ops import ...` holds its own binding, and all
+# of them have to move together. Enumerating them by hand is how this went
+# wrong once already: layers.py and ops.py were patched, model.py was not, so
+# the final LayerNorm kept the correct backward and the audit reported 20 of
+# 29 tensors wrong where a real derivation mistake gives 26. Worse, the six
+# tensors that read clean did have gradients flowing through the broken op,
+# which made the page's explanation of the failure pattern false. Discover the
+# holders instead of listing them.
+_HOLDERS = (ops, layers, model, tfs)
 
-    layers.py did `from .ops import ...`, so the name is bound in both
-    modules and both have to move together or the patch silently does
-    nothing in half the network.
-    """
+
+def set_bug(kind: str) -> str:
+    """Swap a wrong backward pass in, or put the right one back."""
     global _active
     if kind not in BUGS:
         raise ValueError(f"unknown bug {kind!r}")
     for name, true in (("layernorm_backward", _TRUE_LN),
                        ("gelu_backward", _TRUE_GELU)):
-        for mod in (ops, layers):
+        for mod in _HOLDERS:
             if hasattr(mod, name):
                 setattr(mod, name, true)
     _, target, fn = BUGS[kind]
     if fn is not None:
-        for mod in (ops, layers):
+        for mod in _HOLDERS:
             if hasattr(mod, target):
                 setattr(mod, target, fn)
     _active = kind
@@ -272,15 +288,16 @@ def one_derivative(name: str, index: int, eps: float = EPS):
     down = _loss(model)
     param.data.flat[index] = original
     central = (up - down) / (2 * eps)
-    denom = max(abs(central), 1e-12)
+    abs_err = abs(analytic - central)
+    rel_err = abs_err / max(abs(central), 1e-12)
     return {
         "name": name, "index": index, "shape": list(param.data.shape),
         "theta": original, "eps": eps,
         "analytic": analytic, "up": up, "down": down,
         "central": central, "diff": up - down,
-        "abs_err": abs(analytic - central),
-        "rel_err": abs(analytic - central) / denom,
-        "passes": abs(analytic - central) / denom < TOLERANCE,
+        "abs_err": abs_err, "rel_err": rel_err, "atol": ATOL,
+        "tiny": abs_err <= ATOL and rel_err >= TOLERANCE,
+        "passes": abs_err <= ATOL or rel_err < TOLERANCE,
         "bug": _active,
     }
 
@@ -344,8 +361,12 @@ def audit_step(n: int = 160):
         down = _loss(st["model"])
         param.data.flat[c] = original
         central = (up - down) / (2 * eps)
-        rel = abs(analytic - central) / max(abs(central), 1e-12)
-        out.append({"name": name, "i": c, "a": analytic, "n": central, "r": rel})
+        err = abs(analytic - central)
+        rel = err / max(abs(central), 1e-12)
+        # below the difference quotient's own noise floor there is nothing
+        # left to measure, so score it on the absolute gap instead
+        out.append({"name": name, "i": c, "a": analytic, "n": central,
+                    "r": 0.0 if err <= ATOL else rel})
     st["i"] = end
     st["rows"].extend(out)
     done = st["i"] >= len(st["coords"])
