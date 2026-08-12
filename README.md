@@ -35,6 +35,24 @@ inside the large ones so that test stays under a second.
 sampled gradient check is one of them. `tests/test_metadata.py` collects
 the suite and fails if that number ever stops matching.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/gradcheck_dark.svg">
+  <img alt="the 1,312-gradient audit filling in, one parameter tensor at a time" src="docs/gradcheck_light.svg">
+</picture>
+
+The audit as it runs. 1,288 of the 1,312 coordinates land on `y = x` in the
+order the sweep visits them, a tensor at a time, and the panel names the
+tensor currently under the differences and carries the worst relative error
+so far. It ends at 3.06e-07, in `blocks.0.ffn.down.W`, which is 327x inside
+the 1e-4 tolerance CI enforces, and holds the finished plot before looping.
+The other 24 coordinates are exactly zero in both, embedding rows this batch
+never touches, so no log axis can hold them.
+`examples/make_gradcheck_anim.py` writes both files from one call to
+`check_every_scalar()`, and every number in the frame is read off that run
+rather than typed.
+
+The same 1,312 points at rest, with two panels the animation leaves out:
+
 ![hand-derived gradients against central differences](docs/gradcheck.png)
 
 **(a)** every scalar gradient in a 2-block model, plotted against the
@@ -375,6 +393,7 @@ be. The training loss does not.
 | `docs/validation.md` | eleven claims against outside references, including the two that disagree |
 | `docs/figures.py` | regenerates all three figures above from a cold start |
 | `examples/gradcheck.py` | the exhaustive 1,312-scalar sweep |
+| `examples/make_gradcheck_anim.py` | draws that sweep filling in, as an animated SVG |
 | `examples/validate.py` | produces every number in `docs/validation.md` |
 | `examples/regime_handoff.py` | the worked hand-off: labels in, a scored distribution out |
 | `tests/test_properties.py` | randomised invariants — the laws, not the values |
