@@ -79,7 +79,7 @@ every scalar of every parameter in a 2-block model.
 checks all 29 parameter tensors on every push, sampling coordinates
 inside the large ones so that test stays under a second.
 
-1,312 counts derivatives, not tests. The suite is 149 tests, and the
+1,312 counts derivatives, not tests. The suite is 188 tests, and the
 sampled gradient check is one of them. `tests/test_metadata.py` collects
 the suite and fails if that number ever stops matching.
 
@@ -124,7 +124,7 @@ the idealisation sets to 1.
 git clone https://github.com/superkush06/transformer-from-scratch.git
 cd transformer-from-scratch
 pip install -e ".[dev]"
-pytest                                        # 149 tests, ~9 s
+pytest                                        # 188 tests, ~9 s
 ```
 
 NumPy is the only runtime dependency. The `dev` extra adds pytest, ruff
