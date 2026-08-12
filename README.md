@@ -6,6 +6,54 @@
 A detailed record of experiments and visualisations on a GPT whose every
 gradient I derived by hand, with the code that produced them.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/learning_dark.svg">
+  <img alt="a character-level GPT crossing from noise into English over 600 training steps" src="docs/learning_light.svg">
+</picture>
+
+<sub>One 600-step run of the character model, sampled at twelve steps. Each
+frame is 320 characters of the model's own output, hard wrapped at 64
+columns, beside the step and the loss that wrote them.</sub>
+
+A 41,472-parameter model over a 24-character vocabulary, trained on 353
+characters of Hamlet, opens with
+`to beneaatvllkss ncldtekeadqlkeyvrlqhcgleltvhhflghshmavrer`.
+That costs 3.398 nats a character, which is *worse* than the 3.178 of
+guessing uniformly from the alphabet: a random initialisation is confidently
+wrong rather than undecided. By step 50 it has found the two commonest words
+in the corpus and not much else,
+`to be the the to the to the to to the the tio the the the`.
+By step 220 it's reciting clauses,
+`to be that is the question whether tis nobler in the mind to suffer`.
+
+The last frame is step 600, and it isn't the prettiest one. It opens
+`to be o to be that is the question whether tis nobler in the mind`, then
+sticks: `die to sleeep no mo die to sleep no mo die to sleee nd to say we e`.
+Nothing here is retouched, so that is the frame the loop holds on. The loss
+agrees there was little left to win: it flattens around 0.14 after step 350,
+averaging 0.139 over steps 350 to 450 and 0.142 over 500 to 600. Step 600's
+own batch reads 0.223, which is noise around that plateau rather than the
+model getting worse. Forty-one thousand parameters have memorised 353
+characters and the run is done; what's left is a model looping inside a
+passage it already knows.
+
+The loop is 13.6 seconds, twelve frames at 0.95 s with a quarter-second
+cross-fade, and it holds the last frame for 2.9 seconds so the finished text
+reads as a still to anyone who arrives mid-cycle. Frames share one character
+grid, so a letter dissolves into the letter that replaces it instead of the
+whole block blinking. Every frame is a real sample from one run through
+`docs/demo/tfsdemo.py`, the same driver the browser demo calls, at
+temperature 0.4 from the prompt `to be`.
+
+```bash
+PYTHONPATH=. python3 examples/make_learning_anim.py    # ~5 s, both files
+```
+
+`tests/test_learning_anim.py` holds the committed pair to what makes it work
+on GitHub: 60 KB apiece, no script, no external font, no `data:` URI,
+whitespace preserved so the character grid survives, and twelve opacity
+tracks that sum to one at every keyTime.
+
 ### ▶ Run it in your browser: [**superkush06.github.io/transformer-from-scratch/demo**](https://superkush06.github.io/transformer-from-scratch/demo/)
 
 | | | |
@@ -31,7 +79,7 @@ every scalar of every parameter in a 2-block model.
 checks all 29 parameter tensors on every push, sampling coordinates
 inside the large ones so that test stays under a second.
 
-1,312 counts derivatives, not tests. The suite is 124 tests, and the
+1,312 counts derivatives, not tests. The suite is 146 tests, and the
 sampled gradient check is one of them. `tests/test_metadata.py` collects
 the suite and fails if that number ever stops matching.
 
@@ -76,7 +124,7 @@ the idealisation sets to 1.
 git clone https://github.com/superkush06/transformer-from-scratch.git
 cd transformer-from-scratch
 pip install -e ".[dev]"
-pytest                                        # 124 tests, ~9 s
+pytest                                        # 146 tests, ~9 s
 ```
 
 NumPy is the only runtime dependency. The `dev` extra adds pytest, ruff

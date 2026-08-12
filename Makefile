@@ -7,6 +7,7 @@
 #   make gradcheck   all 1,312 gradients against central differences (~1 s)
 #   make gradanim    that same sweep as the animated SVG pair (~1 s)
 #   make attention   every head sharpening as it trains, animated (~17 s)
+#   make learnanim   text learning to write, animated (~5 s)
 #   make validate    every number in docs/validation.md (~20 s)
 #   make handoff     the regime -> next-label distribution example (~14 s)
 #   make figures     redraw the three README figures (~15 s, needs matplotlib)
@@ -15,7 +16,7 @@
 PYTHON ?= python3
 export PYTHONPATH := .
 
-.PHONY: help install test lint check gradcheck gradanim attention validate handoff figures clean
+.PHONY: help install test lint check gradcheck gradanim attention learnanim validate handoff figures clean
 
 help:
 	@sed -n 's/^#   //p' $(MAKEFILE_LIST)
@@ -39,6 +40,9 @@ gradanim:
 
 attention:
 	$(PYTHON) examples/make_attention_anim.py
+
+learnanim:
+	$(PYTHON) examples/make_learning_anim.py
 
 validate:
 	$(PYTHON) examples/validate.py
