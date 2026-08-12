@@ -1,0 +1,500 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 816 748" width="816" height="748" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" role="img" aria-label="Every attention head of a character-level GPT, drawn at 5 checkpoints of one training run">
+<style>text{fill:#C9D1D9}path,rect,circle,text{animation-duration:13s;animation-timing-function:linear;animation-iteration-count:infinite}.fq{fill:#8B949E}.fr{fill:#DB8B4F}.fi{fill:#C9D1D9}.ph0{animation-name:ph0}@keyframes ph0{0%,9%{opacity:1}11%,100%{opacity:0}}.ph1{animation-name:ph1}@keyframes ph1{0%,12%{opacity:0}14%,23%{opacity:1}25%,100%{opacity:0}}.ph2{animation-name:ph2}@keyframes ph2{0%,26%{opacity:0}28%,37%{opacity:1}39%,100%{opacity:0}}.ph3{animation-name:ph3}@keyframes ph3{0%,40%{opacity:0}42%,51%{opacity:1}53%,100%{opacity:0}}.ph4{animation-name:ph4}@keyframes ph4{0%,54%{opacity:0}56%,100%{opacity:1}}.A{animation-name:A}@keyframes A{0%,9%{opacity:.6}14%,37%{opacity:.4}42%,100%{opacity:.2}}.B{animation-name:B}@keyframes B{0%,9%{opacity:.8}14%,23%{opacity:1}28%,37%{opacity:.8}42%,100%{opacity:1}}.C{animation-name:C}@keyframes C{0%,9%{opacity:.6}14%,23%{opacity:.2}28%,51%{opacity:.4}56%,100%{opacity:.6}}.D{animation-name:D}@keyframes D{0%,9%{opacity:.6}14%,51%{opacity:.4}56%,100%{opacity:.2}}.E{animation-name:E}@keyframes E{0%,9%{opacity:.4}14%,51%{opacity:.8}56%,100%{opacity:.6}}.F{animation-name:F}@keyframes F{0%,51%{opacity:.4}56%,100%{opacity:.6}}.G{animation-name:G}@keyframes G{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,51%{opacity:.4}56%,100%{opacity:.2}}.H{animation-name:H}@keyframes H{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,100%{opacity:.4}}.I{animation-name:I}@keyframes I{0%,23%{opacity:.4}28%,100%{opacity:.2}}.J{animation-name:J}@keyframes J{0%,9%{opacity:.2}14%,100%{opacity:.4}}.K{animation-name:K}@keyframes K{0%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.2}}.L{animation-name:L}@keyframes L{0%,37%{opacity:.2}42%,100%{opacity:.}}.M{animation-name:M}@keyframes M{0%,9%{opacity:.4}14%,100%{opacity:.2}}.N{animation-name:N}@keyframes N{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.2}}.O{animation-name:O}@keyframes O{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,100%{opacity:.2}}.P{animation-name:P}@keyframes P{0%,9%{opacity:.2}14%,51%{opacity:.4}56%,100%{opacity:.6}}.Q{animation-name:Q}@keyframes Q{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,100%{opacity:.2}}.R{animation-name:R}@keyframes R{0%,9%{opacity:.2}14%,37%{opacity:.4}42%,100%{opacity:.2}}.S{animation-name:S}@keyframes S{0%,51%{opacity:.4}56%,100%{opacity:.2}}.T{animation-name:T}@keyframes T{0%,23%{opacity:.2}28%,100%{opacity:.4}}.U{animation-name:U}@keyframes U{0%,37%{opacity:.2}42%,100%{opacity:.4}}.V{animation-name:V}@keyframes V{0%,9%{opacity:.4}14%,51%{opacity:.2}56%,100%{opacity:.4}}.W{animation-name:W}@keyframes W{0%,9%{opacity:.2}14%,23%{opacity:.}28%,100%{opacity:.2}}.X{animation-name:X}@keyframes X{0%,51%{opacity:.2}56%,100%{opacity:.4}}.Y{animation-name:Y}@keyframes Y{0%,9%{opacity:.2}14%,51%{opacity:.4}56%,100%{opacity:.2}}.Z{animation-name:Z}@keyframes Z{0%,23%{opacity:.2}28%,51%{opacity:.}56%,100%{opacity:.2}}.A1{animation-name:A1}@keyframes A1{0%,23%{opacity:.2}28%,100%{opacity:.}}.B1{animation-name:B1}@keyframes B1{0%,51%{opacity:.2}56%,100%{opacity:.}}.C1{animation-name:C1}@keyframes C1{0%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.2}}.D1{animation-name:D1}@keyframes D1{0%,9%{opacity:.6}14%,23%{opacity:.8}28%,37%{opacity:.6}42%,100%{opacity:.8}}.E1{animation-name:E1}@keyframes E1{0%,51%{opacity:.6}56%,100%{opacity:.4}}.F1{animation-name:F1}@keyframes F1{0%,9%{opacity:.6}14%,100%{opacity:.4}}.G1{animation-name:G1}@keyframes G1{0%,23%{opacity:.4}28%,100%{opacity:.6}}.H1{animation-name:H1}@keyframes H1{0%,37%{opacity:.6}42%,100%{opacity:.4}}.I1{animation-name:I1}@keyframes I1{0%,9%{opacity:.4}14%,51%{opacity:.6}56%,100%{opacity:.8}}.J1{animation-name:J1}@keyframes J1{0%,37%{opacity:.4}42%,100%{opacity:.2}}.K1{animation-name:K1}@keyframes K1{0%,9%{opacity:.2}14%,37%{opacity:.4}42%,51%{opacity:.6}56%,100%{opacity:.8}}.L1{animation-name:L1}@keyframes L1{0%,9%{opacity:.4}14%,100%{opacity:.6}}.M1{animation-name:M1}@keyframes M1{0%,23%{opacity:.4}28%,51%{opacity:.2}56%,100%{opacity:.4}}.N1{animation-name:N1}@keyframes N1{0%,23%{opacity:.2}28%,51%{opacity:.4}56%,100%{opacity:.2}}.O1{animation-name:O1}@keyframes O1{0%,23%{opacity:.4}28%,37%{opacity:.2}42%,100%{opacity:.4}}.P1{animation-name:P1}@keyframes P1{0%,9%{opacity:.2}14%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.4}}.Q1{animation-name:Q1}@keyframes Q1{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,100%{opacity:.}}.R1{animation-name:R1}@keyframes R1{0%,9%{opacity:.2}14%,37%{opacity:.6}42%,100%{opacity:.8}}.S1{animation-name:S1}@keyframes S1{0%,9%{opacity:.4}14%,37%{opacity:.8}42%,100%{opacity:1}}.T1{animation-name:T1}@keyframes T1{0%,9%{opacity:.8}14%,100%{opacity:.4}}.U1{animation-name:U1}@keyframes U1{0%,9%{opacity:.6}14%,23%{opacity:.4}28%,100%{opacity:.2}}.V1{animation-name:V1}@keyframes V1{0%,23%{opacity:.6}28%,100%{opacity:.8}}.W1{animation-name:W1}@keyframes W1{0%,37%{opacity:.4}42%,100%{opacity:.6}}.X1{animation-name:X1}@keyframes X1{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.4}42%,51%{opacity:.6}56%,100%{opacity:.4}}.Y1{animation-name:Y1}@keyframes Y1{0%,23%{opacity:.4}28%,51%{opacity:.6}56%,100%{opacity:.8}}.Z1{animation-name:Z1}@keyframes Z1{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.4}}.A2{animation-name:A2}@keyframes A2{0%,9%{opacity:.2}14%,23%{opacity:.6}28%,51%{opacity:.4}56%,100%{opacity:.2}}.B2{animation-name:B2}@keyframes B2{0%,9%{opacity:.6}14%,100%{opacity:.8}}.C2{animation-name:C2}@keyframes C2{0%,9%{opacity:.4}14%,37%{opacity:.6}42%,100%{opacity:.4}}.D2{animation-name:D2}@keyframes D2{0%,23%{opacity:.6}28%,37%{opacity:.4}42%,51%{opacity:.6}56%,100%{opacity:.4}}.E2{animation-name:E2}@keyframes E2{0%,23%{opacity:.6}28%,51%{opacity:.4}56%,100%{opacity:.6}}.F2{animation-name:F2}@keyframes F2{0%,23%{opacity:.2}28%,51%{opacity:.4}56%,100%{opacity:.6}}.G2{animation-name:G2}@keyframes G2{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,51%{opacity:.4}56%,100%{opacity:.2}}.H2{animation-name:H2}@keyframes H2{0%,9%{opacity:.2}14%,37%{opacity:.4}42%,100%{opacity:.6}}.I2{animation-name:I2}@keyframes I2{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,100%{opacity:.6}}.J2{animation-name:J2}@keyframes J2{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,100%{opacity:.2}}.K2{animation-name:K2}@keyframes K2{0%,9%{opacity:.6}14%,51%{opacity:.8}56%,100%{opacity:.6}}.L2{animation-name:L2}@keyframes L2{0%,23%{opacity:.4}28%,37%{opacity:.6}42%,51%{opacity:.4}56%,100%{opacity:.8}}.M2{animation-name:M2}@keyframes M2{0%,9%{opacity:.6}14%,23%{opacity:.8}28%,37%{opacity:.6}42%,51%{opacity:.8}56%,100%{opacity:.2}}.N2{animation-name:N2}@keyframes N2{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.2}42%,100%{opacity:.4}}.O2{animation-name:O2}@keyframes O2{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,100%{opacity:.6}}.P2{animation-name:P2}@keyframes P2{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.8}42%,100%{opacity:.4}}.Q2{animation-name:Q2}@keyframes Q2{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.2}}.R2{animation-name:R2}@keyframes R2{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.8}56%,100%{opacity:.4}}.S2{animation-name:S2}@keyframes S2{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.8}42%,51%{opacity:.4}56%,100%{opacity:.2}}.T2{animation-name:T2}@keyframes T2{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.6}}.U2{animation-name:U2}@keyframes U2{0%,23%{opacity:.4}28%,51%{opacity:.2}56%,100%{opacity:.6}}.V2{animation-name:V2}@keyframes V2{0%,23%{opacity:.4}28%,37%{opacity:.6}42%,51%{opacity:.8}56%,100%{opacity:.2}}.W2{animation-name:W2}@keyframes W2{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,100%{opacity:.}}.X2{animation-name:X2}@keyframes X2{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,51%{opacity:.6}56%,100%{opacity:.2}}.Y2{animation-name:Y2}@keyframes Y2{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.6}42%,51%{opacity:.4}56%,100%{opacity:.}}.Z2{animation-name:Z2}@keyframes Z2{0%,23%{opacity:.4}28%,51%{opacity:.2}56%,100%{opacity:.}}.A3{animation-name:A3}@keyframes A3{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.6}42%,51%{opacity:.4}56%,100%{opacity:1}}.B3{animation-name:B3}@keyframes B3{0%,9%{opacity:.4}14%,51%{opacity:.2}56%,100%{opacity:.}}.C3{animation-name:C3}@keyframes C3{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.6}56%,100%{opacity:.4}}.D3{animation-name:D3}@keyframes D3{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.}}.E3{animation-name:E3}@keyframes E3{0%,23%{opacity:.2}28%,51%{opacity:.4}56%,100%{opacity:.8}}.F3{animation-name:F3}@keyframes F3{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.2}42%,100%{opacity:.}}.G3{animation-name:G3}@keyframes G3{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.6}42%,100%{opacity:.4}}.H3{animation-name:H3}@keyframes H3{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.6}42%,100%{opacity:.8}}.I3{animation-name:I3}@keyframes I3{0%,23%{opacity:.2}28%,37%{opacity:.}42%,51%{opacity:.2}56%,100%{opacity:.4}}.J3{animation-name:J3}@keyframes J3{0%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.6}}.K3{animation-name:K3}@keyframes K3{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.8}42%,51%{opacity:1}56%,100%{opacity:.6}}.L3{animation-name:L3}@keyframes L3{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.}42%,51%{opacity:.2}56%,100%{opacity:.}}.M3{animation-name:M3}@keyframes M3{0%,23%{opacity:.2}28%,37%{opacity:.}42%,51%{opacity:.6}56%,100%{opacity:.4}}.N3{animation-name:N3}@keyframes N3{0%,23%{opacity:.2}28%,37%{opacity:.6}42%,51%{opacity:.2}56%,100%{opacity:.6}}.O3{animation-name:O3}@keyframes O3{0%,9%{opacity:.6}14%,23%{opacity:.8}28%,37%{opacity:.4}42%,100%{opacity:.8}}.P3{animation-name:P3}@keyframes P3{0%,9%{opacity:.8}14%,23%{opacity:.6}28%,37%{opacity:.8}42%,100%{opacity:.4}}.Q3{animation-name:Q3}@keyframes Q3{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.4}42%,51%{opacity:.8}56%,100%{opacity:.6}}.R3{animation-name:R3}@keyframes R3{0%,9%{opacity:.6}14%,37%{opacity:.8}42%,51%{opacity:.4}56%,100%{opacity:.8}}.S3{animation-name:S3}@keyframes S3{0%,9%{opacity:.6}14%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.2}}.T3{animation-name:T3}@keyframes T3{0%,9%{opacity:.6}14%,23%{opacity:.4}28%,37%{opacity:.}42%,51%{opacity:.2}56%,100%{opacity:.}}.U3{animation-name:U3}@keyframes U3{0%,37%{opacity:.4}42%,51%{opacity:.8}56%,100%{opacity:.6}}.V3{animation-name:V3}@keyframes V3{0%,23%{opacity:.4}28%,37%{opacity:.8}42%,100%{opacity:.2}}.W3{animation-name:W3}@keyframes W3{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.2}}.X3{animation-name:X3}@keyframes X3{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.}}.Y3{animation-name:Y3}@keyframes Y3{0%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.4}}.Z3{animation-name:Z3}@keyframes Z3{0%,23%{opacity:.4}28%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.8}}.A4{animation-name:A4}@keyframes A4{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,51%{opacity:.6}56%,100%{opacity:.2}}.B4{animation-name:B4}@keyframes B4{0%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.6}}.C4{animation-name:C4}@keyframes C4{0%,23%{opacity:.4}28%,37%{opacity:.}42%,51%{opacity:.4}56%,100%{opacity:.2}}.D4{animation-name:D4}@keyframes D4{0%,9%{opacity:.2}14%,51%{opacity:.4}56%,100%{opacity:.}}.E4{animation-name:E4}@keyframes E4{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.4}}.F4{animation-name:F4}@keyframes F4{0%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.8}}.G4{animation-name:G4}@keyframes G4{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,51%{opacity:.2}56%,100%{opacity:.}}.H4{animation-name:H4}@keyframes H4{0%,23%{opacity:.2}28%,37%{opacity:.}42%,100%{opacity:.2}}.I4{animation-name:I4}@keyframes I4{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.6}42%,51%{opacity:.8}56%,100%{opacity:.4}}.J4{animation-name:J4}@keyframes J4{0%,23%{opacity:.2}28%,37%{opacity:.}42%,51%{opacity:.2}56%,100%{opacity:.6}}.K4{animation-name:K4}@keyframes K4{0%,9%{opacity:.2}14%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.}}.L4{animation-name:L4}@keyframes L4{0%,23%{opacity:.4}28%,37%{opacity:.6}42%,51%{opacity:.2}56%,100%{opacity:.}}.M4{animation-name:M4}@keyframes M4{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,51%{opacity:.2}56%,100%{opacity:.4}}.N4{animation-name:N4}@keyframes N4{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,100%{opacity:.}}.O4{animation-name:O4}@keyframes O4{0%,23%{opacity:.4}28%,51%{opacity:.}56%,100%{opacity:.2}}.P4{animation-name:P4}@keyframes P4{0%,23%{opacity:.2}28%,100%{opacity:.8}}.Q4{animation-name:Q4}@keyframes Q4{0%,51%{opacity:.8}56%,100%{opacity:1}}.R4{animation-name:R4}@keyframes R4{0%,9%{opacity:.6}14%,23%{opacity:.4}28%,51%{opacity:.6}56%,100%{opacity:.2}}.S4{animation-name:S4}@keyframes S4{0%,9%{opacity:.6}14%,23%{opacity:.4}28%,37%{opacity:.8}42%,100%{opacity:.6}}.T4{animation-name:T4}@keyframes T4{0%,23%{opacity:.6}28%,51%{opacity:.4}56%,100%{opacity:.2}}.U4{animation-name:U4}@keyframes U4{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.2}42%,100%{opacity:.}}.V4{animation-name:V4}@keyframes V4{0%,23%{opacity:.4}28%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.2}}.W4{animation-name:W4}@keyframes W4{0%,23%{opacity:.4}28%,37%{opacity:.8}42%,100%{opacity:1}}.X4{animation-name:X4}@keyframes X4{0%,9%{opacity:.4}14%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.6}}.Y4{animation-name:Y4}@keyframes Y4{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.6}42%,100%{opacity:.4}}.Z4{animation-name:Z4}@keyframes Z4{0%,9%{opacity:.4}14%,23%{opacity:.8}28%,100%{opacity:.2}}.A5{animation-name:A5}@keyframes A5{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.6}56%,100%{opacity:.4}}.B5{animation-name:B5}@keyframes B5{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,51%{opacity:.8}56%,100%{opacity:.6}}.C5{animation-name:C5}@keyframes C5{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.}56%,100%{opacity:.2}}.D5{animation-name:D5}@keyframes D5{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.6}42%,51%{opacity:.2}56%,100%{opacity:.6}}.E5{animation-name:E5}@keyframes E5{0%,23%{opacity:.4}28%,37%{opacity:.2}42%,100%{opacity:.6}}.F5{animation-name:F5}@keyframes F5{0%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.6}}.G5{animation-name:G5}@keyframes G5{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,100%{opacity:1}}.H5{animation-name:H5}@keyframes H5{0%,23%{opacity:.2}28%,37%{opacity:.}42%,51%{opacity:.2}56%,100%{opacity:.}}.I5{animation-name:I5}@keyframes I5{0%,51%{opacity:.2}56%,100%{opacity:.8}}.J5{animation-name:J5}@keyframes J5{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,51%{opacity:.8}56%,100%{opacity:.}}.K5{animation-name:K5}@keyframes K5{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.2}}.L5{animation-name:L5}@keyframes L5{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.}42%,100%{opacity:.2}}.M5{animation-name:M5}@keyframes M5{0%,23%{opacity:.4}28%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.2}}.N5{animation-name:N5}@keyframes N5{0%,9%{opacity:.2}14%,23%{opacity:.4}28%,37%{opacity:.8}42%,51%{opacity:.6}56%,100%{opacity:.8}}.O5{animation-name:O5}@keyframes O5{0%,37%{opacity:.2}42%,51%{opacity:.4}56%,100%{opacity:.}}.P5{animation-name:P5}@keyframes P5{0%,9%{opacity:.6}14%,23%{opacity:.8}28%,100%{opacity:1}}.Q5{animation-name:Q5}@keyframes Q5{0%,23%{opacity:.6}28%,100%{opacity:.2}}.R5{animation-name:R5}@keyframes R5{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,100%{opacity:.4}}.S5{animation-name:S5}@keyframes S5{0%,9%{opacity:.6}14%,23%{opacity:.2}28%,37%{opacity:.4}42%,100%{opacity:.2}}.T5{animation-name:T5}@keyframes T5{0%,9%{opacity:.6}14%,37%{opacity:.4}42%,51%{opacity:1}56%,100%{opacity:.8}}.U5{animation-name:U5}@keyframes U5{0%,23%{opacity:.4}28%,37%{opacity:.6}42%,100%{opacity:.2}}.V5{animation-name:V5}@keyframes V5{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.4}}.W5{animation-name:W5}@keyframes W5{0%,9%{opacity:.4}14%,23%{opacity:.8}28%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.2}}.X5{animation-name:X5}@keyframes X5{0%,9%{opacity:.4}14%,23%{opacity:.6}28%,100%{opacity:.2}}.Y5{animation-name:Y5}@keyframes Y5{0%,23%{opacity:.4}28%,37%{opacity:.8}42%,100%{opacity:.6}}.Z5{animation-name:Z5}@keyframes Z5{0%,9%{opacity:.4}14%,23%{opacity:.2}28%,37%{opacity:.}42%,100%{opacity:.2}}.A6{animation-name:A6}@keyframes A6{0%,23%{opacity:.4}28%,51%{opacity:.8}56%,100%{opacity:.6}}.B6{animation-name:B6}@keyframes B6{0%,9%{opacity:.2}14%,23%{opacity:.6}28%,37%{opacity:.2}42%,51%{opacity:.}56%,100%{opacity:.2}}.C6{animation-name:C6}@keyframes C6{0%,9%{opacity:.4}14%,51%{opacity:.2}56%,100%{opacity:.6}}.D6{animation-name:D6}@keyframes D6{0%,23%{opacity:.2}28%,37%{opacity:.6}42%,100%{opacity:.4}}.E6{animation-name:E6}@keyframes E6{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,100%{opacity:1}}.F6{animation-name:F6}@keyframes F6{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,100%{opacity:.}}.G6{animation-name:G6}@keyframes G6{0%,51%{opacity:.2}56%,100%{opacity:.6}}.H6{animation-name:H6}@keyframes H6{0%,23%{opacity:.2}28%,37%{opacity:.4}42%,51%{opacity:.2}56%,100%{opacity:.}}.I6{animation-name:I6}@keyframes I6{0%,23%{opacity:.2}28%,37%{opacity:.6}42%,51%{opacity:.4}56%,100%{opacity:.2}}.J6{animation-name:J6}@keyframes J6{0%,9%{opacity:.2}14%,23%{opacity:.6}28%,37%{opacity:.4}42%,100%{opacity:.8}}.K6{animation-name:K6}@keyframes K6{0%,9%{opacity:.2}14%,23%{opacity:.}28%,51%{opacity:.4}56%,100%{opacity:.2}}</style>
+<rect width="816" height="748" fill="#0D1117"/>
+<text x="26" y="34" font-size="19">Attention sharpening, one training run</text>
+<text x="26" y="58" font-size="11.5" class="fq">Every head of a 2-block, 4-head character GPT, 41,472 parameters, every backward pass by hand.</text>
+<text x="26" y="74" font-size="11.5" class="fq">Trained on 353 characters. Cell opacity is the attention weight over the 12 below, from the forward cache.</text>
+<text x="26" y="90" font-size="11.5" class="fq">The upper triangle stays empty throughout, because position i may only read positions up to i.</text>
+<text x="26" y="134" font-size="10.5" class="fq">steps</text>
+<path d="M102 130H782" stroke="#30363D" stroke-width="1" fill="none"/>
+<path d="M102 126v8" stroke="#30363D" stroke-width="1"/>
+<text x="102" y="120" font-size="10.5" class="fq" text-anchor="middle">0</text>
+<text x="102" y="120" font-size="10.5" class="fr ph0" text-anchor="middle">0</text>
+<text x="102" y="151" font-size="10.5" class="ph0">loss on its own text 3.41 nats, and prompted &#8220;to be or not&#8221; it writes &#8220;ccgecgelsvec&#8221;</text>
+<path d="M272 126v8" stroke="#30363D" stroke-width="1"/>
+<text x="272" y="120" font-size="10.5" class="fq" text-anchor="middle">50</text>
+<text x="272" y="120" font-size="10.5" class="fr ph1" text-anchor="middle">50</text>
+<text x="102" y="151" font-size="10.5" class="ph1">loss on its own text 1.52 nats, and prompted &#8220;to be or not&#8221; it writes &#8220;he the the t&#8221;</text>
+<path d="M442 126v8" stroke="#30363D" stroke-width="1"/>
+<text x="442" y="120" font-size="10.5" class="fq" text-anchor="middle">200</text>
+<text x="442" y="120" font-size="10.5" class="fr ph2" text-anchor="middle">200</text>
+<text x="102" y="151" font-size="10.5" class="ph2">loss on its own text 0.08 nats, and prompted &#8220;to be or not&#8221; it writes &#8220; to be that &#8221;</text>
+<path d="M612 126v8" stroke="#30363D" stroke-width="1"/>
+<text x="612" y="120" font-size="10.5" class="fq" text-anchor="middle">700</text>
+<text x="612" y="120" font-size="10.5" class="fr ph3" text-anchor="middle">700</text>
+<text x="102" y="151" font-size="10.5" class="ph3">loss on its own text 0.01 nats, and prompted &#8220;to be or not&#8221; it writes &#8220; t be that i&#8221;</text>
+<path d="M782 126v8" stroke="#30363D" stroke-width="1"/>
+<text x="782" y="120" font-size="10.5" class="fq" text-anchor="middle">3,000</text>
+<text x="782" y="120" font-size="10.5" class="fr ph4" text-anchor="middle">3,000</text>
+<text x="102" y="151" font-size="10.5" class="ph4">loss on its own text 0.00 nats, and prompted &#8220;to be or not&#8221; it writes &#8220; to be that &#8221;</text>
+<circle cy="130" r="3.2" fill="#DB8B4F"><animate attributeName="cx" values="102;102;272;272;442;442;612;612;782;782" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></circle>
+<g transform="translate(40 212)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 0 &#183; head 0</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M13 97h12m-12 13h12m53 0h12m1 0h12m-64 13h12m1 0h12m1 0h12m27 0h12m-103 13h12m27 0h12m1 0h12m27 0h12m-103 13h12m14 0h12m14 0h12m27 0h12"/>
+<path opacity=".4" d="M0 45h12m14 0h12m1 0h12m-51 13h12m1 0h12m14 0h12m14 13h12m1 52h12"/>
+<path d="M0 6h12"/>
+<path class="A" d="M0 19h12"/>
+<path class="B" d="M13 19h12"/>
+<path class="C" d="M0 32h12"/>
+<path class="D" d="M13 32h12"/>
+<path class="E" d="M26 32h12"/>
+<path class="F" d="M13 45h12"/>
+<path class="G" d="M26 58h12"/>
+<path class="H" d="M52 58h12m-64 13h12m40 0h12m27 65h12"/>
+<path class="I" d="M13 71h12m-12 13h12"/>
+<path class="J" d="M26 71h12m1 13h12m53 26h12"/>
+<path class="K" d="M39 71h12"/>
+<path class="L" d="M0 84h12m14 65h12m14 0h12"/>
+<path class="M" d="M26 84h12m14 13h12m-38 26h12"/>
+<path class="N" d="M52 84h12"/>
+<path class="O" d="M65 84h12"/>
+<path class="P" d="M78 84h12"/>
+<path class="Q" d="M0 97h12m1 26h12m14 13h12"/>
+<path class="R" d="M26 97h12m-12 13h12"/>
+<path class="S" d="M39 97h12"/>
+<path class="T" d="M65 97h12m14 0h12m14 26h12m-12 13h12m-12 13h12m1 0h12"/>
+<path class="U" d="M78 97h12m40 39h12m-64 13h12m1 0h12"/>
+<path class="V" d="M0 110h12"/>
+<path class="W" d="M39 110h12"/>
+<path class="X" d="M52 110h12m27 13h12m-25 13h12"/>
+<path class="Y" d="M65 110h12"/>
+<path class="Z" d="M0 123h12"/>
+<path class="A1" d="M0 136h12m-12 13h12"/>
+<path class="B1" d="M26 136h12"/>
+<path class="C1" d="M143 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="81;81;75.1;75.1;72.8;72.8;70;70;66.2;66.2" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.9 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 5.7 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 5.5 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 5.2 positions</text>
+</g>
+<g transform="translate(238 212)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 0 &#183; head 1</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M13 84h12m53 0h12m-38 26h12m1 0h12m1 0h12m-90 13h12m27 0h12m-51 13h12m14 0h12m14 0h12m1 0h12m27 0h12m14 0h12m-129 13h12m1 0h12m1 0h12m1 0h12m1 0h12m1 0h12m1 0h12m14 0h12"/>
+<path opacity=".4" d="M0 45h12m1 0h12m1 13h12m66 65h12"/>
+<path opacity=".6" d="M26 45h12"/>
+<path d="M0 6h12"/>
+<path class="D1" d="M0 19h12"/>
+<path class="E1" d="M13 19h12"/>
+<path class="F1" d="M0 32h12"/>
+<path class="G1" d="M13 32h12"/>
+<path class="H1" d="M26 32h12"/>
+<path class="M" d="M39 45h12m-51 13h12m-12 13h12m14 13h12m-25 13h12m1 26h12"/>
+<path class="O" d="M13 58h12m27 13h12"/>
+<path class="I1" d="M39 58h12"/>
+<path class="S" d="M52 58h12"/>
+<path class="I" d="M13 71h12m-25 13h12m14 13h12m66 13h12"/>
+<path class="J1" d="M26 71h12"/>
+<path class="K1" d="M39 71h12"/>
+<path class="Y" d="M65 71h12m1 26h12"/>
+<path class="L1" d="M39 84h12"/>
+<path class="T" d="M52 84h12m-25 26h12m79 39h12"/>
+<path class="M1" d="M65 84h12"/>
+<path class="N1" d="M0 97h12"/>
+<path class="U" d="M39 97h12m40 26h12"/>
+<path class="X" d="M52 97h12m-12 26h12m40 26h12"/>
+<path class="O1" d="M65 97h12"/>
+<path class="P1" d="M91 97h12"/>
+<path class="L" d="M0 110h12"/>
+<path class="B1" d="M13 110h12m-12 13h12m53 0h12m-77 13h12m53 0h12"/>
+<path class="Q1" d="M26 110h12"/>
+<path class="R1" d="M91 110h12"/>
+<path class="Q" d="M65 123h12m40 13h12m-129 13h12"/>
+<path class="K" d="M117 123h12"/>
+<path class="J" d="M39 136h12"/>
+<path class="F" d="M91 136h12"/>
+<path class="V" d="M143 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="80.7;80.7;71.5;71.5;75.2;75.2;66.5;66.5;60.5;60.5" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.6 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 5.9 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 5.2 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 4.7 positions</text>
+</g>
+<g transform="translate(436 212)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 0 &#183; head 2</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M39 84h12m-51 26h12m14 0h12m1 0h12m14 0h12m14 0h12m-103 13h12m1 0h12m1 0h12m1 0h12m27 0h12m27 0h12m-103 13h12m1 0h12m1 0h12m14 0h12m27 0h12m1 0h12m-142 13h12m1 0h12m1 0h12m1 0h12m1 0h12m1 0h12m1 0h12m1 0h12m1 0h12"/>
+<path opacity=".4" d="M0 45h12m27 0h12m-51 13h12m14 0h12m27 39h12m27 26h12"/>
+<path d="M0 6h12"/>
+<path class="S1" d="M0 19h12"/>
+<path class="T1" d="M13 19h12"/>
+<path class="U1" d="M0 32h12"/>
+<path class="V1" d="M13 32h12"/>
+<path class="D" d="M26 32h12"/>
+<path class="J1" d="M13 45h12"/>
+<path class="W1" d="M26 45h12"/>
+<path class="I" d="M13 58h12m27 0h12m-38 39h12m66 13h12"/>
+<path class="X1" d="M39 58h12m-51 26h12"/>
+<path class="Q" d="M0 71h12m1 26h12m27 0h12m14 0h12"/>
+<path class="J" d="M13 71h12m-12 39h12m27 0h12m14 0h12"/>
+<path class="M" d="M26 71h12m1 0h12m14 0h12m-64 13h12m27 0h12m-64 13h12"/>
+<path class="Y1" d="M52 71h12"/>
+<path class="Z1" d="M26 84h12m27 52h12"/>
+<path class="H" d="M65 84h12m27 52h12"/>
+<path class="K" d="M78 84h12m1 52h12"/>
+<path class="N1" d="M39 97h12"/>
+<path class="T" d="M91 97h12m27 52h12"/>
+<path class="B1" d="M52 123h12"/>
+<path class="X" d="M65 123h12m40 26h12"/>
+<path class="U" d="M91 123h12m40 26h12"/>
+<path class="A2" d="M0 136h12"/>
+<path class="L" d="M13 136h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="81.2;81.2;73.6;73.6;75.5;75.5;70.9;70.9;64.7;64.7" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.7 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 5.9 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 5.5 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 5.0 positions</text>
+</g>
+<g transform="translate(634 212)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 0 &#183; head 3</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M13 71h12m1 13h12m-38 13h12m1 0h12m1 0h12m27 0h12m-64 13h12m40 0h12m1 0h12m-25 13h12m14 0h12m1 0h12m-116 13h12m1 0h12m1 0h12m1 0h12m14 0h12m1 0h12m14 0h12m1 0h12m-51 13h12m1 0h12m1 0h12m14 0h12"/>
+<path opacity=".4" d="M13 45h12m1 0h12m1 0h12m-25 13h12m14 0h12m-12 13h12m-12 26h12"/>
+<path d="M0 6h12"/>
+<path class="F1" d="M0 19h12"/>
+<path class="B2" d="M13 19h12"/>
+<path class="G1" d="M0 32h12"/>
+<path class="C2" d="M13 32h12"/>
+<path class="D2" d="M26 32h12"/>
+<path class="E2" d="M0 45h12"/>
+<path class="S" d="M0 58h12m27 13h12m-38 13h12"/>
+<path class="J1" d="M13 58h12m27 52h12"/>
+<path class="J" d="M39 58h12m1 26h12"/>
+<path class="F2" d="M0 71h12m105 78h12"/>
+<path class="I" d="M26 71h12m1 39h12m53 0h12"/>
+<path class="T" d="M65 71h12m1 26h12m-51 52h12"/>
+<path class="M" d="M0 84h12m53 0h12m14 13h12m-77 13h12m-38 13h12"/>
+<path class="P1" d="M39 84h12"/>
+<path class="G2" d="M78 84h12"/>
+<path class="F" d="M39 97h12"/>
+<path class="X" d="M0 110h12m40 13h12m-12 13h12"/>
+<path class="H2" d="M91 110h12"/>
+<path class="Q" d="M13 123h12m53 0h12m1 13h12"/>
+<path class="B1" d="M26 123h12"/>
+<path class="I2" d="M39 123h12"/>
+<path class="J2" d="M117 123h12"/>
+<path class="Y" d="M130 136h12"/>
+<path class="L" d="M0 149h12m1 0h12m1 0h12m27 0h12"/>
+<path class="C1" d="M52 149h12"/>
+<path class="Z1" d="M143 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="78.6;78.6;77.1;77.1;74.1;74.1;68.9;68.9;65.4;65.4" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.1 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 6.0 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 5.8 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 5.4 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 5.1 positions</text>
+</g>
+<g transform="translate(40 464)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 1 &#183; head 0</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M26 123h12m1 0h12m14 0h12m14 0h12m1 13h12"/>
+<path opacity=".6" d="M0 19h12"/>
+<path d="M0 6h12"/>
+<path class="K2" d="M13 19h12"/>
+<path class="L2" d="M0 32h12"/>
+<path class="A" d="M13 32h12"/>
+<path class="M2" d="M26 32h12"/>
+<path class="F" d="M0 45h12m14 26h12"/>
+<path class="N2" d="M13 45h12"/>
+<path class="O2" d="M26 45h12"/>
+<path class="P2" d="M39 45h12"/>
+<path class="Q2" d="M0 58h12m-12 13h12m1 0h12"/>
+<path class="V" d="M13 58h12"/>
+<path class="R2" d="M26 58h12"/>
+<path class="S2" d="M39 58h12"/>
+<path class="T2" d="M52 58h12"/>
+<path class="U2" d="M39 71h12"/>
+<path class="I" d="M52 71h12m-12 26h12"/>
+<path class="V2" d="M65 71h12"/>
+<path class="W2" d="M0 84h12m66 0h12"/>
+<path class="A1" d="M13 84h12m-25 26h12m1 0h12m14 0h12m27 0h12m1 0h12m-103 26h12m1 0h12m53 0h12m1 0h12m27 0h12m-116 13h12m27 0h12m14 0h12"/>
+<path class="X2" d="M26 84h12"/>
+<path class="Y2" d="M39 84h12"/>
+<path class="Z2" d="M52 84h12"/>
+<path class="A3" d="M65 84h12"/>
+<path class="B3" d="M0 97h12"/>
+<path class="B1" d="M13 97h12m1 0h12"/>
+<path class="C3" d="M39 97h12"/>
+<path class="D3" d="M65 97h12"/>
+<path class="E3" d="M78 97h12"/>
+<path class="F3" d="M91 97h12m-64 39h12"/>
+<path class="Q" d="M26 110h12"/>
+<path class="Q1" d="M52 110h12"/>
+<path class="G3" d="M65 110h12"/>
+<path class="H3" d="M104 110h12"/>
+<path class="R" d="M0 123h12m1 0h12"/>
+<path class="F2" d="M52 123h12"/>
+<path class="K" d="M78 123h12m14 0h12m-77 26h12"/>
+<path class="I3" d="M117 123h12"/>
+<path class="Z" d="M26 136h12m14 0h12m-12 13h12"/>
+<path class="J3" d="M65 136h12"/>
+<path class="K3" d="M117 136h12"/>
+<path class="L" d="M0 149h12m1 0h12"/>
+<path class="Z1" d="M78 149h12"/>
+<path class="L3" d="M104 149h12"/>
+<path class="M3" d="M117 149h12"/>
+<path class="N3" d="M130 149h12"/>
+<path class="O" d="M143 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="82.1;82.1;75.8;75.8;46.9;46.9;43.3;43.3;39.6;39.6" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.4 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.9 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 3.7 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 3.4 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 3.1 positions</text>
+</g>
+<g transform="translate(238 464)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 1 &#183; head 1</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M39 123h12m-51 13h12m40 0h12m-64 13h12m1 0h12m27 0h12m53 0h12m14 0h12"/>
+<path d="M0 6h12"/>
+<path class="O3" d="M0 19h12"/>
+<path class="P3" d="M13 19h12"/>
+<path class="Q3" d="M0 32h12"/>
+<path class="R3" d="M13 32h12"/>
+<path class="S3" d="M26 32h12"/>
+<path class="I" d="M0 45h12m14 13h12m-25 13h12m53 26h12"/>
+<path class="L1" d="M13 45h12"/>
+<path class="T3" d="M26 45h12"/>
+<path class="Y1" d="M39 45h12"/>
+<path class="U3" d="M0 58h12"/>
+<path class="M1" d="M13 58h12"/>
+<path class="V3" d="M39 58h12"/>
+<path class="W3" d="M52 58h12"/>
+<path class="S" d="M0 71h12"/>
+<path class="X3" d="M26 71h12"/>
+<path class="Y3" d="M39 71h12"/>
+<path class="Z3" d="M52 71h12"/>
+<path class="A4" d="M65 71h12"/>
+<path class="U" d="M0 84h12"/>
+<path class="J2" d="M13 84h12"/>
+<path class="F3" d="M26 84h12m-25 26h12"/>
+<path class="B4" d="M39 84h12"/>
+<path class="H" d="M52 84h12"/>
+<path class="C4" d="M65 84h12"/>
+<path class="K" d="M78 84h12m-25 13h12m14 26h12m27 26h12"/>
+<path class="D4" d="M0 97h12m92 26h12"/>
+<path class="J1" d="M13 97h12"/>
+<path class="M" d="M26 97h12"/>
+<path class="E4" d="M39 97h12"/>
+<path class="F4" d="M52 97h12"/>
+<path class="L" d="M91 97h12m-25 13h12m40 26h12m-116 13h12"/>
+<path class="G4" d="M0 110h12"/>
+<path class="Z1" d="M26 110h12"/>
+<path class="C1" d="M39 110h12m-12 26h12"/>
+<path class="H4" d="M52 110h12m-64 13h12m40 0h12"/>
+<path class="I4" d="M65 110h12"/>
+<path class="Q1" d="M91 110h12"/>
+<path class="X" d="M104 110h12"/>
+<path class="J4" d="M13 123h12"/>
+<path class="K4" d="M26 123h12"/>
+<path class="L4" d="M65 123h12"/>
+<path class="M4" d="M78 123h12"/>
+<path class="B1" d="M117 123h12m-116 13h12m53 0h12"/>
+<path class="N4" d="M26 136h12m66 0h12m-51 13h12m27 0h12"/>
+<path class="O4" d="M65 136h12"/>
+<path class="A1" d="M91 136h12m-12 13h12"/>
+<path class="P4" d="M117 136h12"/>
+<path class="N3" d="M39 149h12"/>
+<path class="N1" d="M78 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="81.2;81.2;73.1;73.1;56.7;56.7;53;53;43.9;43.9" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.7 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 4.4 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 4.1 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 3.4 positions</text>
+</g>
+<g transform="translate(436 464)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 1 &#183; head 2</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M39 123h12m14 26h12m1 0h12m14 0h12m14 0h12"/>
+<path opacity=".4" d="M39 58h12"/>
+<path d="M0 6h12"/>
+<path class="Q4" d="M0 19h12"/>
+<path class="R4" d="M13 19h12"/>
+<path class="S4" d="M0 32h12"/>
+<path class="T4" d="M13 32h12"/>
+<path class="F" d="M26 32h12"/>
+<path class="U4" d="M0 45h12"/>
+<path class="V4" d="M13 45h12"/>
+<path class="W4" d="M26 45h12"/>
+<path class="J1" d="M39 45h12"/>
+<path class="X4" d="M0 58h12"/>
+<path class="Y4" d="M13 58h12"/>
+<path class="Z4" d="M26 58h12"/>
+<path class="A5" d="M52 58h12"/>
+<path class="V" d="M0 71h12"/>
+<path class="O1" d="M13 71h12"/>
+<path class="A1" d="M26 71h12m-12 39h12m40 0h12m14 0h12m-38 13h12m-77 13h12m27 0h12m1 0h12m14 0h12m-12 13h12"/>
+<path class="C1" d="M39 71h12m-25 65h12m105 13h12"/>
+<path class="B5" d="M52 71h12"/>
+<path class="C5" d="M65 71h12"/>
+<path class="O" d="M0 84h12"/>
+<path class="M" d="M13 84h12m27 0h12m-64 13h12"/>
+<path class="D5" d="M26 84h12"/>
+<path class="E5" d="M39 84h12"/>
+<path class="Q" d="M65 84h12"/>
+<path class="K" d="M78 84h12m-38 39h12"/>
+<path class="L" d="M13 97h12m27 0h12m1 13h12m-77 26h12"/>
+<path class="F5" d="M26 97h12"/>
+<path class="T" d="M39 97h12m-25 52h12"/>
+<path class="X2" d="M65 97h12"/>
+<path class="G3" d="M78 97h12"/>
+<path class="O4" d="M91 97h12"/>
+<path class="W2" d="M0 110h12m27 0h12"/>
+<path class="L3" d="M13 110h12"/>
+<path class="G4" d="M52 110h12m-64 39h12"/>
+<path class="G5" d="M91 110h12"/>
+<path class="H5" d="M0 123h12m92 13h12"/>
+<path class="I5" d="M13 123h12"/>
+<path class="N4" d="M26 123h12m27 0h12"/>
+<path class="J5" d="M91 123h12"/>
+<path class="K5" d="M104 123h12"/>
+<path class="L5" d="M117 123h12"/>
+<path class="M5" d="M39 136h12"/>
+<path class="H4" d="M78 136h12"/>
+<path class="N5" d="M117 136h12"/>
+<path class="O5" d="M130 136h12"/>
+<path class="R" d="M13 149h12"/>
+<path class="N1" d="M39 149h12"/>
+<path class="B1" d="M52 149h12"/>
+<path class="X" d="M117 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="81.4;81.4;74.9;74.9;45.9;45.9;46;46;41;41" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.8 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 3.6 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 3.6 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 3.2 positions</text>
+</g>
+<g transform="translate(634 464)">
+<text x="0" y="-22" font-size="11.5" class="fi">block 1 &#183; head 3</text>
+<text x="6 19 32 45 58 71 84 97 110 123 136 149" y="-7" font-size="9" text-anchor="middle" class="fq">to·be·or·not</text>
+<text x="-6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6 -6" y="9 22 35 48 61 74 87 100 113 126 139 152" font-size="9" text-anchor="end" class="fq">to·be·or·not</text>
+<g fill="none" stroke-width="12" stroke="#DB8B4F">
+<path stroke="#30363D" d="M13 6h142M26 19h129M39 32h116M52 45h103M65 58h90M78 71h77M91 84h64M104 97h51M117 110h38M130 123h25M143 136h12"/>
+<path opacity=".2" d="M26 123h12m79 0h12m-116 26h12m27 0h12"/>
+<path d="M0 6h12"/>
+<path class="P5" d="M0 19h12"/>
+<path class="Q5" d="M13 19h12"/>
+<path class="R5" d="M0 32h12"/>
+<path class="V1" d="M13 32h12"/>
+<path class="S5" d="M26 32h12"/>
+<path class="T5" d="M0 45h12"/>
+<path class="U5" d="M13 45h12"/>
+<path class="V5" d="M26 45h12"/>
+<path class="L4" d="M39 45h12"/>
+<path class="W4" d="M0 58h12"/>
+<path class="Q1" d="M13 58h12m1 26h12m-12 26h12"/>
+<path class="Q2" d="M26 58h12"/>
+<path class="W5" d="M39 58h12"/>
+<path class="O" d="M52 58h12m1 13h12"/>
+<path class="U2" d="M0 71h12"/>
+<path class="X5" d="M13 71h12"/>
+<path class="Y5" d="M26 71h12"/>
+<path class="Z5" d="M39 71h12"/>
+<path class="I" d="M52 71h12"/>
+<path class="A6" d="M0 84h12"/>
+<path class="L" d="M13 84h12m27 26h12m1 0h12m1 0h12m-77 13h12m-12 13h12m40 0h12"/>
+<path class="B6" d="M39 84h12"/>
+<path class="C6" d="M52 84h12"/>
+<path class="M" d="M65 84h12m-25 39h12"/>
+<path class="W2" d="M78 84h12"/>
+<path class="X2" d="M0 97h12"/>
+<path class="Q" d="M13 97h12m53 0h12m-90 13h12"/>
+<path class="V4" d="M26 97h12"/>
+<path class="X" d="M39 97h12m-51 52h12"/>
+<path class="G2" d="M52 97h12"/>
+<path class="C1" d="M65 97h12m-25 39h12m27 0h12"/>
+<path class="D6" d="M91 97h12"/>
+<path class="F3" d="M13 110h12m14 26h12"/>
+<path class="A1" d="M39 110h12m27 13h12m-64 13h12m40 0h12m14 0h12m14 0h12"/>
+<path class="E6" d="M91 110h12"/>
+<path class="F6" d="M104 110h12"/>
+<path class="R" d="M0 123h12"/>
+<path class="G6" d="M39 123h12"/>
+<path class="S" d="M65 123h12"/>
+<path class="H6" d="M91 123h12"/>
+<path class="F5" d="M104 123h12"/>
+<path class="I6" d="M0 136h12"/>
+<path class="J6" d="M117 136h12"/>
+<path class="H4" d="M26 149h12"/>
+<path class="K6" d="M39 149h12"/>
+<path class="I3" d="M65 149h12"/>
+<path class="B1" d="M78 149h12"/>
+<path class="J2" d="M91 149h12"/>
+<path class="Z" d="M104 149h12"/>
+<path class="K" d="M117 149h12"/>
+<path class="L3" d="M130 149h12"/>
+<path class="N1" d="M143 149h12"/>
+</g>
+<path d="M0 182h154" stroke="#30363D" stroke-width="5" fill="none"/>
+<rect x="0" y="179.5" height="5" width="0" fill="#DB8B4F"><animate attributeName="width" values="82.2;82.2;68.8;68.8;55.5;55.5;42.8;42.8;41.3;41.3" keyTimes="0;.09;.14;.23;.28;.37;.42;.51;.56;1" dur="13s" repeatCount="indefinite"/></rect>
+<path d="M83.4 177v9" stroke="#58A6FF" stroke-width="1.2" fill="none"/>
+<text x="0" y="172" font-size="10.5" class="fi ph0">reads 6.4 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph1">reads 5.4 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph2">reads 4.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph3">reads 3.3 positions</text>
+<text x="0" y="172" font-size="10.5" class="fi ph4">reads 3.2 positions</text>
+</g>
+<text x="26" y="676" font-size="10.5" class="fq">attention weight</text>
+<rect x="26" y="682" width="18" height="12" fill="#DB8B4F" opacity=".2"/>
+<text x="48" y="692" font-size="9.5" class="fq">.07</text>
+<rect x="74" y="682" width="18" height="12" fill="#DB8B4F" opacity=".4"/>
+<text x="96" y="692" font-size="9.5" class="fq">.22</text>
+<rect x="122" y="682" width="18" height="12" fill="#DB8B4F" opacity=".6"/>
+<text x="144" y="692" font-size="9.5" class="fq">.43</text>
+<rect x="170" y="682" width="18" height="12" fill="#DB8B4F" opacity=".8"/>
+<text x="192" y="692" font-size="9.5" class="fq">.69</text>
+<rect x="218" y="682" width="18" height="12" fill="#DB8B4F" opacity="1"/>
+<text x="240" y="692" font-size="9.5" class="fq">1</text>
+<rect x="274" y="682" width="18" height="12" fill="#30363D"/>
+<text x="296" y="692" font-size="9.5" class="fq">masked</text>
+<text x="26" y="716" font-size="10.5" class="fq">Bar under each grid: how many of the 12 positions the head effectively reads, the mean over rows of exp(row entropy).</text>
+<text x="26" y="732" font-size="10.5" class="fq">The mark on it is 6.5, what a head spread evenly over everything the mask allows would score.</text>
+</svg>

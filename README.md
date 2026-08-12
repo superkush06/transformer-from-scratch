@@ -31,7 +31,7 @@ every scalar of every parameter in a 2-block model.
 checks all 29 parameter tensors on every push, sampling coordinates
 inside the large ones so that test stays under a second.
 
-1,312 counts derivatives, not tests. The suite is 105 tests, and the
+1,312 counts derivatives, not tests. The suite is 124 tests, and the
 sampled gradient check is one of them. `tests/test_metadata.py` collects
 the suite and fails if that number ever stops matching.
 
@@ -76,7 +76,7 @@ the idealisation sets to 1.
 git clone https://github.com/superkush06/transformer-from-scratch.git
 cd transformer-from-scratch
 pip install -e ".[dev]"
-pytest                                        # 105 tests, ~9 s
+pytest                                        # 124 tests, ~9 s
 ```
 
 NumPy is the only runtime dependency. The `dev` extra adds pytest, ruff
@@ -308,6 +308,47 @@ position id and the whole cache becomes invalid. `generate` detects that
 and rebuilds. The cost belongs to absolute positions, not to caching, and
 it is one of the arguments for relative schemes.
 
+## What the heads are reading
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/attention_dark.svg">
+  <img alt="every attention head of the character model sharpening over one training run" src="docs/attention_light.svg">
+</picture>
+
+Every head of the character-level model the browser demo trains, drawn at
+five checkpoints of one run and animated between them. Cell opacity is the
+attention weight, read out of the forward cache. The empty upper triangle
+is the causal mask: position `i` may only read positions up to `i`, in
+every frame.
+
+The motion is the point. At step 0 each row spreads its weight almost
+evenly over every position the mask allows, so the grids are a flat wash;
+by step 3,000 the second block has picked its spots. The bar under each
+grid puts a number on it, the mean over rows of `exp(row entropy)`, which
+counts how many positions a row effectively reads. A head spread evenly
+over 12 positions scores 6.5, and all eight start within 0.4 of that. At
+step 3,000 the four heads in block 1 read 3.1 to 3.4 positions and the
+four in block 0 only come down to 4.7 to 5.2. So the concentration is
+unmistakable in the second block and slight in the first, which is a
+distinction the loss curve does not make: the line under the clock is the
+model's own greedy continuation, and it is already writing ` to be that `
+at step 200.
+
+Opacity is quantised to five levels, because cells that share a quantised
+trajectory can share one CSS animation and that is what keeps the file
+under 60 KB. The legend prints the weight each level stands for.
+
+```bash
+PYTHONPATH=. python3 examples/make_attention_anim.py    # ~17 s, both files
+```
+
+Nothing in the figure is hand-drawn and nothing is cached. The script
+trains through `docs/demo/tfsdemo.py`, the same driver the browser demo
+calls, and reads every matrix out of that run.
+`tests/test_attention_anim.py` holds the committed pair to what makes it
+work on GitHub: 60 KB apiece, no script, no external font, no `data:` URI,
+one meaning per animation name, and no cell ever drawn above the diagonal.
+
 ## What the loss will not tell you
 
 An earlier version of this repo trained its demo on a single fixed
@@ -391,9 +432,10 @@ be. The training loss does not.
 | `tfs/train.py` | `AdamLite`, Adam with bias correction |
 | `docs/theory.md` | the equations, and the backward formulas people get wrong |
 | `docs/validation.md` | eleven claims against outside references, including the two that disagree |
-| `docs/figures.py` | regenerates all three figures above from a cold start |
+| `docs/figures.py` | regenerates the three PNG figures above from a cold start |
 | `examples/gradcheck.py` | the exhaustive 1,312-scalar sweep |
 | `examples/make_gradcheck_anim.py` | draws that sweep filling in, as an animated SVG |
+| `examples/make_attention_anim.py` | trains the character model and draws every head sharpening |
 | `examples/validate.py` | produces every number in `docs/validation.md` |
 | `examples/regime_handoff.py` | the worked hand-off: labels in, a scored distribution out |
 | `tests/test_properties.py` | randomised invariants — the laws, not the values |
