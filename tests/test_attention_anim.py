@@ -20,6 +20,12 @@ which has a way of breaking silently:
 * **the causal mask.** The point of the upper triangle is that it is empty.
   A cell drawn above the diagonal would be a claim that position i read
   position j > i, and no amount of prose in the caption would outrank it.
+* **every keyframe sets an opacity.** A value a browser rejects is a
+  declaration a browser drops, and an empty keyframe is not the same as one
+  holding zero: the animation loses that stop, and if the lost stop was the
+  last one it falls back to the element's own opacity of 1. The invisible
+  level shipped once spelled as a bare dot, which turned 122 cells whose
+  weight had gone to nothing into the brightest cells in the hold.
 """
 
 from __future__ import annotations
@@ -39,6 +45,9 @@ sys.path.insert(0, str(ROOT / "examples"))
 import make_attention_anim as gen  # noqa: E402
 
 _HEX = re.compile(r"#[0-9A-Fa-f]{6}")
+# CSS <number>: a dot needs a digit on one side of it, which is the whole point
+# of this pattern being here.
+_CSS_NUMBER = re.compile(r"[+-]?(?:\d+\.?\d*|\.\d+)")
 _HEAD = re.compile(r'<g fill="none" stroke-width="\d+" stroke="#[0-9A-Fa-f]{6}">'
                    r"(.*?)</g>", re.S)
 _PATH = re.compile(r"<path(.*?)/>", re.S)
@@ -176,3 +185,40 @@ def test_the_opacity_ramp_is_monotone_and_spans_the_range():
     # the legend prints the weight each level stands for, so the round trip
     # through the gamma has to land back on the level it names
     assert [gen.level(w) for w in weights] == list(range(gen.LEVELS + 1))
+
+
+def test_every_level_spells_itself_as_a_css_number():
+    """A shortened number is still a number, and "." is not one.
+
+    `opacity` trims "0.00" at both ends, and the invisible level is the one
+    where that leaves nothing to trim to. It shipped once as a bare dot.
+    """
+    for k in range(gen.LEVELS + 1):
+        spelling = gen.opacity(k)
+        assert _CSS_NUMBER.fullmatch(spelling), f"level {k} spelled {spelling!r}"
+        assert float(spelling) == pytest.approx(k / gen.LEVELS)
+
+
+@pytest.mark.parametrize("path", FILES, ids=lambda p: p.name)
+def test_no_keyframe_leaves_its_opacity_out(path):
+    """Every stop of every animation has to actually set an opacity.
+
+    A declaration a browser rejects is dropped, and the keyframe holding it
+    goes empty. That is not the same as a keyframe holding opacity 0: with no
+    valid stop at 100% the animation falls back to the element's own opacity of
+    1, so a cell whose weight vanished by the last checkpoint fades *up* to
+    solid across the hold, and the frame a reader arrives on says the reverse
+    of the run that drew it.
+    """
+    svg = path.read_text()
+    for name, body in re.findall(r"@keyframes ([A-Za-z0-9]+)\{(.*?)\}\}", svg):
+        stops = re.findall(r"((?:\d+%,)*\d+%)\{([^}]*)", body + "}")
+        assert stops, f"@keyframes {name} has no stops"
+        for at, decls in stops:
+            value = re.fullmatch(r"opacity:(.*)", decls)
+            assert value, f"@keyframes {name} sets nothing at {at}: {decls!r}"
+            assert _CSS_NUMBER.fullmatch(value.group(1)), (
+                f"@keyframes {name} at {at} is not a CSS number: "
+                f"{value.group(1)!r}")
+    for value in re.findall(r'opacity="([^"]*)"', svg):
+        assert _CSS_NUMBER.fullmatch(value), f'opacity="{value}" is not a number'

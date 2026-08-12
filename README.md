@@ -79,7 +79,7 @@ every scalar of every parameter in a 2-block model.
 checks all 29 parameter tensors on every push, sampling coordinates
 inside the large ones so that test stays under a second.
 
-1,312 counts derivatives, not tests. The suite is 146 tests, and the
+1,312 counts derivatives, not tests. The suite is 149 tests, and the
 sampled gradient check is one of them. `tests/test_metadata.py` collects
 the suite and fails if that number ever stops matching.
 
@@ -124,7 +124,7 @@ the idealisation sets to 1.
 git clone https://github.com/superkush06/transformer-from-scratch.git
 cd transformer-from-scratch
 pip install -e ".[dev]"
-pytest                                        # 146 tests, ~9 s
+pytest                                        # 149 tests, ~9 s
 ```
 
 NumPy is the only runtime dependency. The `dev` extra adds pytest, ruff
@@ -395,7 +395,8 @@ trains through `docs/demo/tfsdemo.py`, the same driver the browser demo
 calls, and reads every matrix out of that run.
 `tests/test_attention_anim.py` holds the committed pair to what makes it
 work on GitHub: 60 KB apiece, no script, no external font, no `data:` URI,
-one meaning per animation name, and no cell ever drawn above the diagonal.
+one meaning per animation name, an opacity a browser will actually parse at
+every keyframe, and no cell ever drawn above the diagonal.
 
 ## What the loss will not tell you
 

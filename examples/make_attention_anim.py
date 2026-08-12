@@ -27,10 +27,11 @@ Two things are worth watching, and they disagree with each other:
 Size is the constraint. GitHub serves these under a CSP that kills
 JavaScript, external fonts and data URIs, and a README should not pull a
 megabyte, so the budget is 60 KB per file. Three things buy that: opacity is
-quantised to six levels, cells that share a quantised trajectory share one
-CSS animation, and cells whose trajectory never changes are drawn once with
-no animation at all. Everything is generated from the run, so re-running with
-the same seeds rewrites the same bytes.
+quantised to the five levels the legend prints, plus invisible; cells that
+share a quantised trajectory share one CSS animation; and cells whose
+trajectory never changes are drawn once with no animation at all. Everything
+is generated from the run, so re-running with the same seeds rewrites the same
+bytes.
 """
 
 from __future__ import annotations
@@ -117,8 +118,10 @@ def probe_loss(probes: list[tuple[str, str]]) -> float:
     """Mean -log p(next character), in nats, through the demo's own API.
 
     `gpt_next` is what the browser page draws its next-character bars from, so
-    this is the same distribution a reader sees, scored on characters the
-    model was not shown at that position.
+    this is the same distribution a reader sees. It is not held out: `gpt_step`
+    draws its windows from anywhere in the corpus, so the model has been shown
+    every one of these positions, and the figure calls the number "loss on its
+    own text" rather than anything stronger.
     """
     total = 0.0
     for prefix, want in probes:
@@ -197,7 +200,19 @@ def weight_label(k: int) -> str:
 
 
 def opacity(k: int) -> str:
-    """Shortest CSS spelling of a level's opacity."""
+    """Shortest CSS spelling of a level's opacity.
+
+    Level 0 has to spell itself "0" and not "." Trimming both ends of "0.00"
+    leaves a bare dot, which is not a CSS number, so the browser throws the
+    declaration away and the keyframe it sat in ends up empty. A keyframe with
+    no opacity in it is not a keyframe that means "invisible": if the empty one
+    is the last stop, the animation has no 100% for opacity, falls back to the
+    element's own value of 1, and a cell whose weight went to nothing ramps up
+    to the brightest thing in the grid over the hold. That is the figure saying
+    the opposite of the run.
+    """
+    if k <= 0:
+        return "0"
     if k >= LEVELS:
         return "1"
     return f"{k / LEVELS:.2f}".rstrip("0").lstrip("0")
@@ -206,8 +221,9 @@ def opacity(k: int) -> str:
 def phase_stops(n: int) -> list[tuple[int, int]]:
     """Percent windows each checkpoint holds for, before morphing to the next.
 
-    The last one runs to 100, so the loop ends on a still: whoever arrives
-    mid-cycle sees the trained heads for 3.9 of the 13 seconds.
+    The last one runs to 100, so the loop ends on a still: with five
+    checkpoints the trained heads hold from 56% to the end, which is 5.7 of the
+    13 seconds, and that is what whoever arrives mid-cycle most likely sees.
     """
     return [(k * STEP, k * STEP + HOLD) if k < n - 1 else (k * STEP, 100)
             for k in range(n)]
@@ -312,9 +328,9 @@ def render(cap: dict, pal: dict) -> str:
     height = legend_y + 58
 
     # --- group cells by quantised trajectory ------------------------------
-    # A trajectory is one cell's six levels. Cells sharing one get one CSS
-    # animation for the whole figure; cells that never change get no animation
-    # and no class.
+    # A trajectory is one cell's level at each of the checkpoints. Cells
+    # sharing one get one CSS animation for the whole figure; cells that never
+    # change get no animation and no class.
     animated: dict[tuple[int, ...], str] = {}
     per_head: list[dict] = []
     for hi in range(len(frames[0]["heads"])):
