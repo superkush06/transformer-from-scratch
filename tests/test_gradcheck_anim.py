@@ -449,9 +449,9 @@ def test_the_panel_counts_the_running_worst_and_not_the_final_one(svg, sweep, fa
     # the final worst — which lives two decades above the floor and formats
     # identically on both runners.
     shown = [float(pair[1]) for pair in got]
-    assert all(b <= a for a, b in zip(shown[1:], shown[:-1])), \
+    assert all(b <= a for a, b in zip(shown[1:], shown[:-1], strict=True)), \
         f"the panel numbers decrease somewhere, so they are not a running maximum; {REGEN}"
-    for seen, ours in zip(shown, running):
+    for seen, ours in zip(shown, running, strict=True):
         assert ours / 2 <= seen <= ours * 2, \
             f"a window reads {seen:.2e} where this run's running worst is {ours:.2e}; {REGEN}"
     assert got[-1][1] == f"{facts['worst']:.2e}", f"the last window is not this run's worst; {REGEN}"
