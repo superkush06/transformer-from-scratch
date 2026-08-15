@@ -33,3 +33,22 @@ jobs:
       - name: Versions
         if: always()
         run: python -c "import numpy, sys; print(numpy.__version__, sys.version)"
+
+  parity:
+    # The finite-difference suite says the backward pass agrees with the math.
+    # This job says it agrees with torch's autograd — the other implementation
+    # of the math — by rebuilding the model in torch from the same weights and
+    # diffing every parameter gradient. One OS is enough: the claim under test
+    # is implementation equivalence, not reduction order.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install -e ".[dev]"
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Parity
+        run: pytest tests/test_torch_parity.py tests/test_notebook.py -q

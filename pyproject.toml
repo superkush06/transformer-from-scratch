@@ -14,6 +14,10 @@ dependencies = ["numpy>=1.24,<3"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.5", "matplotlib>=3.7"]
+# torch is never a runtime dependency: the package is NumPy to the last line.
+# The extra exists so CI's parity job (and anyone curious) can diff every
+# hand-derived gradient against torch's autograd.
+audit = ["torch>=2.2"]
 
 [tool.setuptools.packages.find]
 include = ["tfs*"]

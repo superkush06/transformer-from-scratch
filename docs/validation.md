@@ -126,14 +126,15 @@ defect.
 - **No comparison against PyTorch or JAX in this document.** They are not
   dependencies and will not become ones, so every reference on this page is
   either a closed form or an implementation written inside this repository
-  from the published equation. The comparison does exist, in
-  [`notebooks/audit.ipynb`](../notebooks/audit.ipynb), which rebuilds the
-  same architecture with `torch` ops, copies these weights across and diffs
-  the gradients: they agree to about `1e-15` in float64 at every
-  architecture tried, from 1,312 to 17,536 parameters. That lives in a
-  notebook rather than here because it needs a dependency the package
-  refuses. `tests/test_notebook.py` holds it to the precision it claims
-  wherever torch happens to be installed, and skips where it is not.
+  from the published equation. The torch comparison lives one layer up:
+  [`notebooks/audit.ipynb`](../notebooks/audit.ipynb) rebuilds the same
+  architecture with `torch` ops, copies these weights across and diffs the
+  gradients — they agree to about `1e-15` in float64 at every architecture
+  tried, from 1,312 to 17,536 parameters — and CI's `parity` job runs that
+  comparison on every push (`tests/test_torch_parity.py` sweeps five
+  architectures; `tests/test_notebook.py` holds the notebook's prose to the
+  precision it claims), installing torch from the `[audit]` extra so the
+  package itself stays NumPy-only.
 - **No claim about numerical behaviour in float32.** Everything runs in
   float64; the gradient check in particular is meaningless at lower
   precision (see `docs/theory.md` on why ε ≈ 1e-5 needs double).
