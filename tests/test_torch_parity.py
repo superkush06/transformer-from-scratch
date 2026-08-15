@@ -23,9 +23,7 @@ import pathlib
 import numpy as np
 import pytest
 
-torch = pytest.importorskip("torch", reason="torch is not a dependency of this package")
-
-from tfs import GPT  # noqa: E402
+from tfs import GPT
 
 # tests/ is not a package, so the notebook-runner helpers in test_notebook.py
 # are loaded by path. The alias keeps pytest from collecting the file twice.
@@ -33,6 +31,13 @@ _spec = importlib.util.spec_from_file_location(
     "audit_notebook_runner", pathlib.Path(__file__).with_name("test_notebook.py"))
 test_notebook = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(test_notebook)
+
+# Skip at the marker, not at import: these tests must still COLLECT without
+# torch, because test_metadata.py holds the README's suite count to what
+# pytest collects, and that number should not depend on which extras are
+# installed. CI's `parity` job installs the [audit] extra and runs them.
+needs_torch = pytest.mark.skipif(test_notebook._no_torch(),
+                                 reason="torch is not a dependency of this package")
 
 # (d_model, n_heads, n_blocks, d_ff, vocab, B, T, max_T, seed)
 CONFIGS = [
@@ -54,6 +59,7 @@ def mirror():
     return test_notebook.run_upto("def mirror(")["mirror"]
 
 
+@needs_torch
 @pytest.mark.parametrize("d_model,n_heads,n_blocks,d_ff,vocab,B,T,max_T,seed", CONFIGS)
 def test_every_gradient_matches_torch(mirror, d_model, n_heads, n_blocks, d_ff,
                                       vocab, B, T, max_T, seed):
@@ -76,6 +82,7 @@ def test_every_gradient_matches_torch(mirror, d_model, n_heads, n_blocks, d_ff,
         assert worst < TOL, f"{name}: relative gradient error {worst:.2e} against torch"
 
 
+@needs_torch
 def test_the_mirror_is_not_trivially_agreeing(mirror):
     """Break one weight after the copy and demand the comparison notices.
 
